@@ -141,6 +141,8 @@ tags:
       links, which let another device of the same person add a passkey of its own.
   - name: data
     description: Per-user state sync (the whole app state as one JSON blob)
+  - name: cardio
+    description: Laud Fit standalone cardio sessions (run, ride, swim, treadmill...) with optional GPS route; stored in SQLite
   - name: push
     description: Web Push (VAPID) subscriptions, rest-timer and test pushes
   - name: activity
@@ -1410,6 +1412,107 @@ paths:
               example: { error: "credential already registered", code: "credential-exists" }
         '429': { $ref: '#/components/responses/TooManyRequests' }
 
+  /api/cardio/sessions:
+    get:
+      tags: [cardio]
+      operationId: listCardioSessions
+      summary: List the caller's cardio sessions
+      description: Newest first, without the GPS route (`has_track` says whether `GET /api/cardio/track` has one).
+      responses:
+        '200':
+          description: The sessions.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  sessions:
+                    type: array
+                    items: { $ref: '#/components/schemas/CardioSession' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    post:
+      tags: [cardio]
+      operationId: putCardioSession
+      summary: Create or update one cardio session
+      description: >-
+        Upsert keyed by the client-made `session.id`, so a device that was offline can push again
+        safely. `points` is optional, each `[seconds_from_start, lat, lon, alt|null, accuracy|null]`
+        (at most 20000); a push without it keeps the stored route. Distances are metres and times
+        seconds; speed, pace and splits are derived by the client.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [session]
+              properties:
+                session: { $ref: '#/components/schemas/CardioSession' }
+                points:
+                  type: array
+                  maxItems: 20000
+                  items: { type: array, items: { type: number, nullable: true } }
+      responses:
+        '200':
+          description: Stored.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+                  id: { type: string }
+        '400':
+          description: A field is missing or out of range.
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+  /api/cardio/track:
+    get:
+      tags: [cardio]
+      operationId: getCardioTrack
+      summary: The GPS route of one session
+      parameters:
+        - { name: id, in: query, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: The route (empty when the session has none).
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  points:
+                    type: array
+                    items: { type: array, items: { type: number, nullable: true } }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404':
+          description: No such session.
+  /api/cardio/delete:
+    post:
+      tags: [cardio]
+      operationId: deleteCardioSession
+      summary: Delete one cardio session and its route
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [id]
+              properties:
+                id: { type: string }
+      responses:
+        '200':
+          description: Deleted.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404':
+          description: No such session.
   /api/data:
     get:
       tags: [data]
@@ -3099,6 +3202,25 @@ components:
           example: { error: "that code is wrong, used or expired", code: "link-invalid" }
 
   schemas:
+    CardioSession:
+      type: object
+      required: [id, activity, env, source, started, duration_s]
+      properties:
+        id: { type: string, pattern: '^[A-Za-z0-9_-]{8,64}$', description: Made by the client. }
+        activity:
+          type: string
+          enum: [run, walk, hike, cycling, mtb, stationary_bike, treadmill_run, treadmill_walk, inline, swim, rowing, elliptical, stairs, jump_rope, other]
+        env: { type: string, enum: [indoor, outdoor] }
+        source: { type: string, enum: [gps, manual, estimated] }
+        started: { type: integer, description: Start, Unix ms. }
+        duration_s: { type: integer, minimum: 1 }
+        moving_s: { type: integer, description: Time actually moving; defaults to duration_s. }
+        distance_m: { type: number, nullable: true }
+        elev_gain_m: { type: number, nullable: true }
+        calories: { type: number, nullable: true, description: An estimate (MET x weight x time). }
+        note: { type: string, maxLength: 500 }
+        updated: { type: integer, readOnly: true }
+        has_track: { type: boolean, readOnly: true }
     Error:
       type: object
       required: [error]

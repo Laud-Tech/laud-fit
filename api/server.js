@@ -34,6 +34,7 @@ import { createMediaStore, mediaLimits, mediaConfig, MediaError, HASH_RE } from 
 import { effectiveRoutineId } from './queue.js';
 import { stampPut } from './sync-stamps.js';
 import { atomicWrite as durableWrite } from './durable.js';
+import { openCardio, CardioError } from './cardio.js';
 import { excusedOn, nudgeFor, nudgeWindowOpen, toneOf } from './nudge.js';
 
 const PORT = +(process.env.PORT || 3000);
@@ -1757,6 +1758,11 @@ const passkeyRoutes = {
 // MEDIA_UPLOADS=0 takes the routes and the /api/config block away, but the store is created
 // either way: an admin deleting a profile must still remove files uploaded while it was on.
 const MEDIA_LIMITS = mediaLimits(process.env);
+// Laud Fit cardio sessions (cardio.js): SQLite in DATA_DIR, opened once at boot.
+const CARDIO = openCardio(DATA);
+// A phone on a long ride pushes the whole route at once; a budget per profile stops a loop, not a person.
+const CARDIO_WRITES = createWindow({ max: 120, windowMs: 3600000 });
+const cardioCall = fn => { try { return fn(); } catch (e) { throw e instanceof CardioError ? new HttpError(400, e.message) : e; } };
 const MEDIA_ON = MEDIA_LIMITS.enabled;
 const MEDIA = createMediaStore({ dir: path.join(DATA, 'uploads'), limits: MEDIA_LIMITS, readState });
 // Leftovers of uploads the previous process was receiving when it stopped.
@@ -2472,6 +2478,38 @@ const routes = {
   // The invite code that let them in stays burned — it was used, and freeing it would quietly
   // widen an invite-only instance. `GET /api/admin/user` is the export: the dashboard offers it
   // before the confirm, so the training history can be kept if anyone wants it.
+  // ---- Laud Fit: standalone cardio sessions (cardio.js) ----
+  'GET /api/cardio/sessions': async (req, res) => {
+    const user = readSession(req);
+    if (!user) return json(res, 401, { error: 'not signed in' });
+    json(res, 200, { sessions: CARDIO.list(user.id) });
+  },
+  // Upsert by the client's id, so an offline device can retry safely. `points` is optional; a push
+  // without it keeps the stored route.
+  'POST /api/cardio/sessions': async (req, res) => {
+    const user = readSession(req);
+    if (!user) return json(res, 401, { error: 'not signed in' });
+    const wait = CARDIO_WRITES.take(user.id);
+    if (wait) return tooMany(res, wait);
+    const body = await readBody(req);
+    const id = cardioCall(() => CARDIO.upsert(user.id, body.session, body.points));
+    json(res, 200, { ok: true, id });
+  },
+  'GET /api/cardio/track': async (req, res) => {
+    const user = readSession(req);
+    if (!user) return json(res, 401, { error: 'not signed in' });
+    const points = CARDIO.track(user.id, new URL(req.url, 'http://x').searchParams.get('id') || '');
+    if (points === undefined) return json(res, 404, { error: 'no such session' });
+    json(res, 200, { points });
+  },
+  'POST /api/cardio/delete': async (req, res) => {
+    const user = readSession(req);
+    if (!user) return json(res, 401, { error: 'not signed in' });
+    const body = await readBody(req);
+    if (!CARDIO.remove(user.id, body.id)) return json(res, 404, { error: 'no such session' });
+    json(res, 200, { ok: true });
+  },
+
   'POST /api/admin/user/delete': async (req, res) => {
     const admin = requireAdmin(req, res); if (!admin) return;
     const body = await readBody(req);
@@ -2489,6 +2527,7 @@ const routes = {
     try { fs.unlinkSync(stateFile(u.id)); } catch { /* already gone */ }
     try { coachConfig.clearProfileAuth(u.id); } catch { /* nothing stored */ }
     // Their photos and videos — the one place a profile's folder under uploads/ is removed.
+    try { CARDIO.removeUser(u.id); } catch (e) { console.error('cardio: could not remove sessions of', u.id, e.message); }
     try { MEDIA.removeUser(u.id); } catch (e) { console.error('media: could not remove uploads of', u.id, e.message); }
     saveDb();
     // Logged with the name, because the id is about to mean nothing to anyone reading this back.
