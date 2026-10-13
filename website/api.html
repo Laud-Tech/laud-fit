@@ -218,6 +218,7 @@ main.api-main .lead { color: var(--fg-2); max-width: 58ch; margin: 14px 0 0; fon
   <a class="side-link" href="#password"><b>Password</b><span>Optional name &amp; password (PASSWORD_LOGIN)</span></a>
   <a class="side-link" href="#passkeys"><b>Passkeys</b><span>More passkeys &amp; device links</span></a>
   <a class="side-link" href="#data"><b>Data</b><span>State sync</span></a>
+  <a class="side-link" href="#cardio"><b>Cardio</b><span>Laud Fit cardio sessions</span></a>
   <a class="side-link" href="#push"><b>Push</b><span>Notifications &amp; rest timer</span></a>
   <a class="side-link" href="#activity"><b>Activity</b><span>Live presence</span></a>
   <a class="side-link" href="#media"><b>Media</b><span>Photos &amp; videos of your exercises &amp; workouts</span></a>
@@ -245,7 +246,7 @@ main.api-main .lead { color: var(--fg-2); max-width: 58ch; margin: 14px 0 0; fon
   <p class="api-facts">
     <span>OpenAPI 3.1.0</span>
     <span>openGym v1.4.1</span>
-    <span>69 endpoints</span>
+    <span>73 endpoints</span>
     <span>AGPL-3.0-or-later</span>
   </p>
 
@@ -1563,6 +1564,156 @@ main.api-main .lead { color: var(--fg-2); max-width: 58ch; margin: 14px 0 0; fon
   <div class="prow rrow">
     <span class="r-code s4">401</span>
     <span class="p-desc">No session, expired/revoked session, or a disabled account.<span class="r-sig"><code>{&quot;error&quot;:&quot;not signed in&quot;}</code></span></span>
+  </div>
+    </div>
+  </div>
+</details>
+  </div>
+</section>
+
+<section class="api-sec" id="cardio">
+  <h2>Cardio</h2>
+  <p class="sub">Laud Fit standalone cardio sessions (run, ride, swim, treadmill...) with optional GPS route; stored in SQLite</p>
+  <div class="eps">
+
+<details class="ep" id="op-listCardioSessions">
+  <summary>
+    <span class="m get">GET</span>
+    <span class="ep-path"><code>/api/cardio/sessions</code></span>
+    <span class="ep-chev" aria-hidden="true"></span>
+    <span class="ep-sum">List the caller's cardio sessions</span>
+  </summary>
+  <div class="ep-body">
+<p>Newest first, without the GPS route (<code>has_track</code> says whether <code>GET /api/cardio/track</code> has one).</p>
+    <p class="ep-auth"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2.5"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg><span>Requires a session: the cookie set at sign-in, or <code>Authorization: Bearer &lt;token&gt;</code> from mobile-app pairing.</span></p>
+
+
+    <p class="ep-h">Responses</p>
+    <div class="ptab">
+  <div class="prow rrow">
+    <span class="r-code s2">200</span>
+    <span class="p-desc">The sessions.<span class="r-sig">{ sessions: <a href="#schema-CardioSession">CardioSession</a>[] }</span></span>
+  </div>
+  <div class="prow rrow">
+    <span class="r-code s4">401</span>
+    <span class="p-desc">No session, expired/revoked session, or a disabled account.<span class="r-sig"><code>{&quot;error&quot;:&quot;not signed in&quot;}</code></span></span>
+  </div>
+    </div>
+  </div>
+</details>
+
+<details class="ep" id="op-putCardioSession">
+  <summary>
+    <span class="m post">POST</span>
+    <span class="ep-path"><code>/api/cardio/sessions</code></span>
+    <span class="ep-chev" aria-hidden="true"></span>
+    <span class="ep-sum">Create or update one cardio session</span>
+  </summary>
+  <div class="ep-body">
+<p>Upsert keyed by the client-made <code>session.id</code>, so a device that was offline can push again safely. <code>points</code> is optional, each <code>[seconds_from_start, lat, lon, alt|null, accuracy|null]</code> (at most 20000); a push without it keeps the stored route. Distances are metres and times seconds; speed, pace and splits are derived by the client.</p>
+    <p class="ep-auth"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2.5"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg><span>Requires a session: the cookie set at sign-in, or <code>Authorization: Bearer &lt;token&gt;</code> from mobile-app pairing.</span></p>
+
+<p class="ep-h">Request body <span class="p-hint">(JSON)</span></p><div class="ptab">
+  <div class="prow">
+    <span class="p-name">session<em class="p-req" title="required">required</em></span>
+    <span class="p-type"><a href="#schema-CardioSession">CardioSession</a></span>
+    <span class="p-desc"></span>
+  </div>
+  <div class="prow">
+    <span class="p-name">points</span>
+    <span class="p-type">number[][]</span>
+    <span class="p-desc"></span>
+  </div>
+</div>
+    <p class="ep-h">Responses</p>
+    <div class="ptab">
+  <div class="prow rrow">
+    <span class="r-code s2">200</span>
+    <span class="p-desc">Stored.<span class="r-sig">{ ok: boolean, id: string }</span></span>
+  </div>
+  <div class="prow rrow">
+    <span class="r-code s4">400</span>
+    <span class="p-desc">A field is missing or out of range.</span>
+  </div>
+  <div class="prow rrow">
+    <span class="r-code s4">401</span>
+    <span class="p-desc">No session, expired/revoked session, or a disabled account.<span class="r-sig"><code>{&quot;error&quot;:&quot;not signed in&quot;}</code></span></span>
+  </div>
+  <div class="prow rrow">
+    <span class="r-code s4">429</span>
+    <span class="p-desc">Paused by the sign-in throttle (see <i>Throttling</i> in the description). The request was not looked at; try again after <code>Retry-After</code> seconds.<span class="r-sig"><code>{&quot;error&quot;:&quot;too many attempts, try again later&quot;}</code></span></span>
+  </div>
+    </div>
+  </div>
+</details>
+
+<details class="ep" id="op-getCardioTrack">
+  <summary>
+    <span class="m get">GET</span>
+    <span class="ep-path"><code>/api/cardio/track</code></span>
+    <span class="ep-chev" aria-hidden="true"></span>
+    <span class="ep-sum">The GPS route of one session</span>
+  </summary>
+  <div class="ep-body">
+
+    <p class="ep-auth"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2.5"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg><span>Requires a session: the cookie set at sign-in, or <code>Authorization: Bearer &lt;token&gt;</code> from mobile-app pairing.</span></p>
+<p class="ep-h">Query parameters</p><div class="ptab">
+  <div class="prow">
+    <span class="p-name">id<em class="p-req" title="required">required</em></span>
+    <span class="p-type">string</span>
+    <span class="p-desc"></span>
+  </div>
+</div>
+
+    <p class="ep-h">Responses</p>
+    <div class="ptab">
+  <div class="prow rrow">
+    <span class="r-code s2">200</span>
+    <span class="p-desc">The route (empty when the session has none).<span class="r-sig">{ points: number[][] }</span></span>
+  </div>
+  <div class="prow rrow">
+    <span class="r-code s4">401</span>
+    <span class="p-desc">No session, expired/revoked session, or a disabled account.<span class="r-sig"><code>{&quot;error&quot;:&quot;not signed in&quot;}</code></span></span>
+  </div>
+  <div class="prow rrow">
+    <span class="r-code s4">404</span>
+    <span class="p-desc">No such session.</span>
+  </div>
+    </div>
+  </div>
+</details>
+
+<details class="ep" id="op-deleteCardioSession">
+  <summary>
+    <span class="m post">POST</span>
+    <span class="ep-path"><code>/api/cardio/delete</code></span>
+    <span class="ep-chev" aria-hidden="true"></span>
+    <span class="ep-sum">Delete one cardio session and its route</span>
+  </summary>
+  <div class="ep-body">
+
+    <p class="ep-auth"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2.5"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg><span>Requires a session: the cookie set at sign-in, or <code>Authorization: Bearer &lt;token&gt;</code> from mobile-app pairing.</span></p>
+
+<p class="ep-h">Request body <span class="p-hint">(JSON)</span></p><div class="ptab">
+  <div class="prow">
+    <span class="p-name">id<em class="p-req" title="required">required</em></span>
+    <span class="p-type">string</span>
+    <span class="p-desc"></span>
+  </div>
+</div>
+    <p class="ep-h">Responses</p>
+    <div class="ptab">
+  <div class="prow rrow">
+    <span class="r-code s2">200</span>
+    <span class="p-desc">Deleted.<span class="r-sig">{ ok: boolean }</span></span>
+  </div>
+  <div class="prow rrow">
+    <span class="r-code s4">401</span>
+    <span class="p-desc">No session, expired/revoked session, or a disabled account.<span class="r-sig"><code>{&quot;error&quot;:&quot;not signed in&quot;}</code></span></span>
+  </div>
+  <div class="prow rrow">
+    <span class="r-code s4">404</span>
+    <span class="p-desc">No such session.</span>
   </div>
     </div>
   </div>
@@ -3165,6 +3316,84 @@ main.api-main .lead { color: var(--fg-2); max-width: 58ch; margin: 14px 0 0; fon
        is <b>representative, not enforced</b>: the server stores it opaquely and the app
        grows it over time.</p>
     <div class="eps">
+
+<details class="ep sch" id="schema-CardioSession">
+  <summary>
+    <span class="sch-name"><code>CardioSession</code></span>
+    <span class="ep-chev" aria-hidden="true"></span>
+    <span class="ep-sum"></span>
+  </summary>
+  <div class="ep-body">
+
+<div class="ptab">
+  <div class="prow">
+    <span class="p-name">id<em class="p-req" title="required">required</em></span>
+    <span class="p-type">string</span>
+    <span class="p-desc">Made by the client.</span>
+  </div>
+  <div class="prow">
+    <span class="p-name">activity<em class="p-req" title="required">required</em></span>
+    <span class="p-type">&quot;run&quot; | &quot;walk&quot; | &quot;hike&quot; | &quot;cycling&quot; | &quot;mtb&quot; | &quot;stationary_bike&quot; | &quot;treadmill_run&quot; | &quot;treadmill_walk&quot; | &quot;inline&quot; | &quot;swim&quot; | &quot;rowing&quot; | &quot;elliptical&quot; | &quot;stairs&quot; | &quot;jump_rope&quot; | &quot;other&quot;</span>
+    <span class="p-desc"></span>
+  </div>
+  <div class="prow">
+    <span class="p-name">env<em class="p-req" title="required">required</em></span>
+    <span class="p-type">&quot;indoor&quot; | &quot;outdoor&quot;</span>
+    <span class="p-desc"></span>
+  </div>
+  <div class="prow">
+    <span class="p-name">source<em class="p-req" title="required">required</em></span>
+    <span class="p-type">&quot;gps&quot; | &quot;manual&quot; | &quot;estimated&quot;</span>
+    <span class="p-desc"></span>
+  </div>
+  <div class="prow">
+    <span class="p-name">started<em class="p-req" title="required">required</em></span>
+    <span class="p-type">integer</span>
+    <span class="p-desc">Start</span>
+  </div>
+  <div class="prow">
+    <span class="p-name">duration_s<em class="p-req" title="required">required</em></span>
+    <span class="p-type">integer <span class="p-hint">(1&ndash;)</span></span>
+    <span class="p-desc"></span>
+  </div>
+  <div class="prow">
+    <span class="p-name">moving_s</span>
+    <span class="p-type">integer</span>
+    <span class="p-desc">Time actually moving; defaults to duration_s.</span>
+  </div>
+  <div class="prow">
+    <span class="p-name">distance_m</span>
+    <span class="p-type">number</span>
+    <span class="p-desc"></span>
+  </div>
+  <div class="prow">
+    <span class="p-name">elev_gain_m</span>
+    <span class="p-type">number</span>
+    <span class="p-desc"></span>
+  </div>
+  <div class="prow">
+    <span class="p-name">calories</span>
+    <span class="p-type">number</span>
+    <span class="p-desc">An estimate (MET x weight x time).</span>
+  </div>
+  <div class="prow">
+    <span class="p-name">note</span>
+    <span class="p-type">string <span class="p-hint">(&le; 500 chars)</span></span>
+    <span class="p-desc"></span>
+  </div>
+  <div class="prow">
+    <span class="p-name">updated</span>
+    <span class="p-type">integer</span>
+    <span class="p-desc"></span>
+  </div>
+  <div class="prow">
+    <span class="p-name">has_track</span>
+    <span class="p-type">boolean</span>
+    <span class="p-desc"></span>
+  </div>
+</div>
+  </div>
+</details>
 
 <details class="ep sch" id="schema-Error">
   <summary>
