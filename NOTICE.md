@@ -1,5 +1,12 @@
 # Third-party notices
 
+Laud Fit is a derivative of openGym v1.4.1 (https://github.com/DuarteSantos8/openGym, commit
+5ec23d3b) and carries openGym's notices below unchanged. Features ported from GymMane
+(https://github.com/InlitX/GymMane, © 2026 InlitX, GPL-3.0 with an additional attribution term
+under its section 7(b)) are marked "Based on GymMane by InlitX" in the app's About screen.
+GymMane's exercise art comes from Workout Guide (Bryl Lim) and Everkinetic, CC BY-SA 4.0; any of it
+that is used here keeps that licence and its credits (see GymMane's CREDITS.md).
+
 openGym — Copyright (C) 2026 Duarte Santos.
 openGym's own code is licensed under the **GNU AGPL v3.0** (see [LICENSE](LICENSE)).
 

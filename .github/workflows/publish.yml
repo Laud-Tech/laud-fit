@@ -1,0 +1,82 @@
+name: Publish images
+
+# Laud Fit images go to ghcr.io/laud-tech/laud-fit/{api,web}.
+#   push to main   -> :edge                       (the fit-dev stack follows this)
+#   tag vX.Y.Z     -> :X.Y.Z, :X.Y and :latest    (the production stack follows this)
+# Every build also gets an immutable :sha-<7 chars> tag, so a stack can be pinned and rolled back.
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - image: api
+            context: ./api
+            file: ./api/Dockerfile
+          - image: web
+            context: .
+            file: ./web/Dockerfile
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Image name (registry names must be lowercase)
+        id: img
+        run: echo "name=ghcr.io/${GITHUB_REPOSITORY,,}/${{ matrix.image }}" >> "$GITHUB_OUTPUT"
+
+      - name: Version metadata
+        id: ver
+        run: |
+          case "$GITHUB_REF" in
+            refs/tags/*) VERSION="${GITHUB_REF#refs/tags/}" ;;
+            *)           VERSION="main-${GITHUB_SHA::7}" ;;
+          esac
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "date=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> "$GITHUB_OUTPUT"
+
+      # ponytail: amd64 only. Add `docker/setup-qemu-action` and linux/arm64 to `platforms` if the
+      # Portainer host ever turns out to be ARM; QEMU builds of the web image are slow.
+      - uses: docker/setup-buildx-action@v4
+
+      - uses: docker/login-action@v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/metadata-action@v6
+        id: meta
+        with:
+          images: ${{ steps.img.outputs.name }}
+          tags: |
+            type=raw,value=edge,enable=${{ github.ref == 'refs/heads/main' }}
+            type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/v') }}
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha,prefix=sha-,format=short
+
+      - uses: docker/build-push-action@v7
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.file }}
+          platforms: linux/amd64
+          build-args: |
+            VERSION=${{ steps.ver.outputs.version }}
+            VCS_REF=${{ github.sha }}
+            BUILD_DATE=${{ steps.ver.outputs.date }}
+            APP_BUILD=${{ github.sha }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=${{ matrix.image }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.image }}
