@@ -1,6 +1,6 @@
 {
-  "name": "openGym",
-  "short_name": "openGym",
+  "name": "Laud Fit",
+  "short_name": "Laud Fit",
   "description": "Personal gym & body weight tracker",
   "start_url": "./",
   "scope": "./",
