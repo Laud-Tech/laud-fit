@@ -7,6 +7,11 @@ under its section 7(b)) are marked "Based on GymMane by InlitX" in the app's Abo
 GymMane's exercise art comes from Workout Guide (Bryl Lim) and Everkinetic, CC BY-SA 4.0; any of it
 that is used here keeps that licence and its credits (see GymMane's CREDITS.md).
 
+Parts derived from GymMane stay under GymMane's GPL-3.0 and its attribution term; the GPL (section 13)
+lets them be combined with this project's AGPL-3.0 code. Derived so far: the food table behind the
+Nutrition screen (`frontend/src/data/foods.json`, built by `scripts/build-foods.mjs` from GymMane's
+`assets/data/foods.tsv` and `dishes.tsv`; its food photos are not used).
+
 openGym — Copyright (C) 2026 Duarte Santos.
 openGym's own code is licensed under the **GNU AGPL v3.0** (see [LICENSE](LICENSE)).
 

@@ -57,9 +57,10 @@ export function flush() {
         st = { ...st, removed: st.removed.filter(x => x !== id) }; commit()
       }
       for (const [id, { session, points }] of Object.entries(st.pending)) {
+        const sent = st.pending[id]
         await api('/api/cardio/sessions', { method: 'POST', body: JSON.stringify({ session, points }) })
-        const { [id]: _, ...rest } = st.pending
-        st = { ...st, pending: rest }; commit()
+        // Edited again while it was being sent: leave that newer copy queued.
+        if (st.pending[id] === sent) { const { [id]: _, ...rest } = st.pending; st = { ...st, pending: rest }; commit() }
       }
       const { sessions } = await api('/api/cardio/sessions')
       // What is still waiting to be pushed wins over the server's older copy.
