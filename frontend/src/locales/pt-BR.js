@@ -1503,6 +1503,22 @@ export const PT_BR_OVERRIDES = {
   'Moderate': 'Moderado',
   'Active': 'Ativo',
   'Athlete': 'Atleta',
+  'Edit food': 'Editar alimento',
+  'Fiber': 'Fibras',
+  'Portion': 'Porção',
+  'Remove photo': 'Remover foto',
+  'Sodium': 'Sódio',
+  'Sugar': 'Açúcares',
+  'That picture is too large.': 'Essa imagem é grande demais.',
+  'Usual portion (optional)': 'Porção usual (opcional)',
+  'Weight of one portion': 'Peso de uma porção',
+  'Unit': 'Unidade',
+  'Slice': 'Fatia',
+  'Scoop': 'Medida',
+  'Tablespoon': 'Colher de sopa',
+  'Teaspoon': 'Colher de chá',
+  'Cup': 'Xícara',
+  'Glass': 'Copo',
 }
 
 export default { ...pt, ...PT_BR_OVERRIDES }

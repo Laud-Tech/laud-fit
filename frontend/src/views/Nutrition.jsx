@@ -14,8 +14,13 @@ import { bind as bindCardio, getCardio, subscribe as subCardio } from '../lib/ca
 import Icon from '../components/Icon.jsx'
 import { Button, NumberField, Section, Segmented, SelectRow, TextField } from '../components/ui.jsx'
 import { confirmSheet } from '../sheets.jsx'
+import { appBase } from '../lib/app-base.js'
+import { shrinkPhoto } from '../lib/food-photo.js'
 
 const toast = m => useUI.getState().toast(m)
+// Library foods have a photo under /food/<id>.webp; your own carry theirs as a small data URL.
+const photoOf = f => (f?.photo ? f.photo : f && !f.custom && !String(f.id).startsWith('my-') && !String(f.id).startsWith('dish:') ? appBase().replace(/\/$/, '') + '/food/' + f.id + '.webp' : null)
+const Pic = ({ food, size = 40 }) => { const src = photoOf(food); return src ? <img src={src} alt="" width={size} height={size} loading="lazy" style={{ borderRadius: 8, objectFit: 'cover', flex: 'none', background: 'var(--surface-2)' }} onError={e => { e.currentTarget.style.display = 'none' }} /> : <span style={{ width: size, flex: 'none' }} /> }
 const MEAL_LABEL = { breakfast: 'Breakfast', lunch: 'Lunch', dinner: 'Dinner', snacks: 'Snacks' }
 const useNutrition = () => useSyncExternalStore(subscribe, getNutrition)
 const useCardioSessions = () => useSyncExternalStore(subCardio, getCardio).sessions
@@ -96,7 +101,7 @@ function Amount({ item, meal, date, entry, close }) {
   }
   const del = () => { editDay(date, d => ({ ...d, entries: d.entries.filter(x => x.id !== entry.id) })); close() }
   return <>
-    <h3>{item.name}</h3>
+    <div className="row" style={{ gap: 12, alignItems: 'center' }}><Pic food={item.food} size={56} /><h3 style={{ margin: 0 }}>{item.name}</h3></div>
     <div className="measure-form"><label className="measure-field"><span>{t('Amount')}</span><span className="measure-input"><NumberField value={grams} onChange={setGrams} /><i>g</i></span></label></div>
     {item.kind && <div className="row" style={{ gap: 8, margin: '8px 0', flexWrap: 'wrap' }}>
       {[0.5, 1, 2].map(n => <Button key={n} size="sm" variant="tinted" onClick={() => setGrams(Math.round(portionGrams(item) * n))}>{n} × {Math.round(portionGrams(item))} g</Button>)}
@@ -113,30 +118,53 @@ function Amount({ item, meal, date, entry, close }) {
   </>
 }
 const amountSheet = props => useUI.getState().openSheet(close => <Amount {...props} close={close} />)
-const libItem = f => ({ id: f.id, name: nameOf(f, getLang()), per100: f, kind: f.kind, g: f.g })
+const libItem = f => ({ id: f.id, name: nameOf(f, getLang()), per100: f, kind: f.kind, g: f.g, food: f })
 
 /* ------------------------------ add / create food ------------------------------ */
 
-function NewFood({ onSaved, close }) {
-  const [v, setV] = useState({ name: '', k: null, p: null, c: null, f: null })
+const KINDS = ['unit', 'slice', 'scoop', 'tbsp', 'tsp', 'cup', 'glass']
+const KIND_LABEL = { unit: 'Unit', slice: 'Slice', scoop: 'Scoop', tbsp: 'Tablespoon', tsp: 'Teaspoon', cup: 'Cup', glass: 'Glass' }
+
+function FoodForm({ food, onSaved, close }) {
+  const [v, setV] = useState(() => ({ name: '', k: null, p: null, c: null, f: null, fi: null, su: null, na: null, kind: 'unit', g: null, photo: '', ...(food || {}) }))
   const set = key => x => setV(o => ({ ...o, [key]: x }))
+  const pick = async e => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    try { const url = await shrinkPhoto(file); if (url) setV(o => ({ ...o, photo: url })); else toast(t('That picture is too large.')) } catch { toast(t('That picture is too large.')) }
+  }
   const save = () => {
     if (!v.name.trim()) { toast(t('Enter a name')); return }
-    const food = { id: 'my-' + uid(), custom: true, name: v.name.trim().slice(0, 80), k: v.k || 0, p: v.p || 0, c: v.c || 0, f: v.f || 0 }
-    saveFood(food); close(); onSaved(food)
+    const out = { id: food?.id || 'my-' + uid(), custom: true, name: v.name.trim().slice(0, 80), k: v.k || 0, p: v.p || 0, c: v.c || 0, f: v.f || 0 }
+    for (const key of ['fi', 'su', 'na']) if (v[key] > 0) out[key] = v[key]
+    if (v.g > 0) { out.kind = v.kind; out.g = v.g }
+    if (v.photo) out.photo = v.photo
+    saveFood(out); close(); onSaved?.(out)
   }
+  const del = () => confirmSheet({ title: t('Delete'), message: food.name, confirmText: t('Delete'), danger: true, onConfirm: () => { removeFood(food.id); close() } })
   const num = (label, key, unit) => <label className="measure-field"><span>{label}</span><span className="measure-input"><NumberField nullable value={v[key]} onChange={set(key)} /><i>{unit}</i></span></label>
   return <>
-    <h3>{t('New food')}</h3>
-    <TextField placeholder={t('Name')} value={v.name} onChange={e => setV(o => ({ ...o, name: e.target.value }))} />
+    <h3>{food ? t('Edit food') : t('New food')}</h3>
+    <div className="row" style={{ gap: 12, alignItems: 'center' }}>
+      <label style={{ cursor: 'pointer' }}>{v.photo ? <img src={v.photo} alt="" width="64" height="64" style={{ borderRadius: 12, objectFit: 'cover' }} /> : <span className="tile" style={{ display: 'inline-block', width: 64, height: 64, textAlign: 'center', lineHeight: '64px' }}><Icon name="plus" /></span>}
+        <input type="file" accept="image/*" onChange={pick} style={{ display: 'none' }} /></label>
+      <div style={{ flex: 1 }}><TextField placeholder={t('Name')} value={v.name} onChange={e => setV(o => ({ ...o, name: e.target.value }))} /></div>
+    </div>
+    {v.photo && <div style={{ marginTop: 6 }}><Button size="sm" variant="ghost" onClick={() => setV(o => ({ ...o, photo: '' }))}>{t('Remove photo')}</Button></div>}
     <div className="muted small" style={{ margin: '8px 0' }}>{t('Values per 100 g')}</div>
-    <div className="measure-form">{num('kcal', 'k', 'kcal')}{num(t('Protein'), 'p', 'g')}{num(t('Carbs'), 'c', 'g')}{num(t('Fat'), 'f', 'g')}</div>
+    <div className="measure-form">{num('kcal', 'k', 'kcal')}{num(t('Protein'), 'p', 'g')}{num(t('Carbs'), 'c', 'g')}{num(t('Fat'), 'f', 'g')}
+      {num(t('Fiber'), 'fi', 'g')}{num(t('Sugar'), 'su', 'g')}{num(t('Sodium'), 'na', 'mg')}</div>
+    <div className="muted small" style={{ margin: '8px 0' }}>{t('Usual portion (optional)')}</div>
+    <SelectRow title={t('Portion')} sheetTitle={t('Portion')} value={v.kind} onChange={set('kind')} options={KINDS.map(k => ({ value: k, label: t(KIND_LABEL[k]) }))} />
+    <div className="measure-form">{num(t('Weight of one portion'), 'g', 'g')}</div>
     <div style={{ height: 12 }} />
     <Button variant="primary" onClick={save}>{t('Save')}</Button>
+    {food && <><div style={{ height: 8 }} /><Button variant="ghost" icon="trash" onClick={del}>{t('Delete')}</Button></>}
     <div style={{ height: 8 }} />
     <Button variant="ghost" className="dim" onClick={close}>{t('Cancel')}</Button>
   </>
 }
+const foodSheet = (food, onSaved) => useUI.getState().openSheet(c => <FoodForm food={food} onSaved={onSaved} close={c} />)
 
 function AddFood({ meal, date, close }) {
   useLang()
@@ -163,11 +191,13 @@ function AddFood({ meal, date, close }) {
     {tab !== 'quick' && <div style={{ marginTop: 10 }}><TextField placeholder={t('Search foods')} value={q} onChange={e => setQ(e.target.value)} autoFocus /></div>}
     {tab === 'foods' && <div style={{ marginTop: 6 }}>
       {!data && <div className="muted small">…</div>}
-      {results.map(f => <button key={f.id} className="lrow" onClick={() => pick(libItem(f))}>
-        <span className="lrow-m"><span className="lrow-t">{nameOf(f, lang)}</span><span className="lrow-s">{Math.round(f.k)} kcal / 100 g{f.custom ? ' · ' + t('Mine') : ''}</span></span><Icon name="plus" /></button>)}
+      {(q.trim() ? results : custom).map(f => <div key={f.id} className="row" style={{ gap: 4 }}>
+        <button className="lrow" style={{ flex: 1 }} onClick={() => pick(libItem(f))}><Pic food={f} />
+          <span className="lrow-m"><span className="lrow-t">{nameOf(f, lang)}</span><span className="lrow-s">{Math.round(f.k)} kcal / 100 g{f.custom ? ' · ' + t('Mine') : ''}</span></span><Icon name="plus" /></button>
+        {f.custom && <button className="iconbtn" aria-label={t('Edit food')} onClick={() => foodSheet(f)}><Icon name="pencil" /></button>}</div>)}
       {q.trim() && !results.length && data && <div className="empty small">{t('Nothing found.')}</div>}
       <div style={{ height: 8 }} />
-      <Button variant="tinted" icon="plus" onClick={() => useUI.getState().openSheet(c => <NewFood close={c} onSaved={f => amountSheet({ item: libItem(f), meal, date })} />)}>{t('New food')}</Button>
+      <Button variant="tinted" icon="plus" onClick={() => foodSheet(null, f => amountSheet({ item: libItem(f), meal, date }))}>{t('New food')}</Button>
     </div>}
     {tab === 'dishes' && <div style={{ marginTop: 6 }}>{dishes.map(d => <button key={d.id} className="lrow" onClick={() => dish(d)}>
       <span className="lrow-m"><span className="lrow-t">{nameOf(d, lang)}</span><span className="lrow-s">{Math.round(expandDish(d, byId).total.k)} kcal</span></span><Icon name="plus" /></button>)}</div>}
@@ -187,7 +217,7 @@ export default function Nutrition() {
   useLang()
   const S = useStore(s => s.S)
   const user = useStore(s => s.user)
-  const { goal, days } = useNutrition()
+  const { goal, days, foods: mine } = useNutrition()
   const sessions = useCardioSessions()
   const [date, setDate] = useState(todayISO())
   useEffect(() => { bind(user?.id || 'guest'); bindCardio(user?.id || 'guest'); flush() }, [user?.id])
@@ -228,9 +258,9 @@ export default function Nutrition() {
       </div>
     </div>
     {MEALS.map(meal => <Section key={meal} title={`${t(MEAL_LABEL[meal])} · ${byMeal[meal].k} kcal`}>
-      {day.entries.filter(e => e.meal === meal).map(e => <button key={e.id} className="lrow" onClick={() => e.food ? amountSheet({ item: { id: e.food, name: e.name, per100: Object.fromEntries(Object.entries(e.m).map(([k, v]) => [k, e.grams ? v / e.grams * 100 : 0])), g: e.grams }, meal, date, entry: e })
+      {day.entries.filter(e => e.meal === meal).map(e => <button key={e.id} className="lrow" onClick={() => e.food ? amountSheet({ item: { id: e.food, food: mine[e.food] || { id: e.food }, name: e.name, per100: Object.fromEntries(Object.entries(e.m).map(([k, v]) => [k, e.grams ? v / e.grams * 100 : 0])), g: e.grams }, meal, date, entry: e })
         : confirmSheet({ title: t('Delete'), message: e.name + ' · ' + e.m.k + ' kcal', confirmText: t('Delete'), danger: true, onConfirm: () => editDay(date, d => ({ ...d, entries: d.entries.filter(x => x.id !== e.id) })) })}>
-        <span className="lrow-m"><span className="lrow-t">{e.name}</span><span className="lrow-s">{e.grams ? e.grams + ' g' : ''}</span></span><span>{e.m.k} kcal</span></button>)}
+        <Pic food={e.food ? (mine[e.food] || { id: e.food }) : null} size={36} /><span className="lrow-m"><span className="lrow-t">{e.name}</span><span className="lrow-s">{e.grams ? e.grams + ' g' : ''}</span></span><span>{e.m.k} kcal</span></button>)}
       <div className="lrow" style={{ justifyContent: 'center' }}><Button size="sm" variant="tinted" icon="plus" onClick={() => addSheet(meal, date)}>{t('Add food')}</Button></div>
     </Section>)}
   </div>

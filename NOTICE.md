@@ -10,7 +10,9 @@ that is used here keeps that licence and its credits (see GymMane's CREDITS.md).
 Parts derived from GymMane stay under GymMane's GPL-3.0 and its attribution term; the GPL (section 13)
 lets them be combined with this project's AGPL-3.0 code. Derived so far: the food table behind the
 Nutrition screen (`frontend/src/data/foods.json`, built by `scripts/build-foods.mjs` from GymMane's
-`assets/data/foods.tsv` and `dishes.tsv`; its food photos are not used).
+`assets/data/foods.tsv` and `dishes.tsv`) and its 561 food photos (`frontend/public/food/`). GymMane does not
+state where the photos come from; they are included on the owner's decision and risk. If their origin
+turns out to be restrictive, delete `frontend/public/food/` — the app shows no picture where a file is missing.
 
 openGym — Copyright (C) 2026 Duarte Santos.
 openGym's own code is licensed under the **GNU AGPL v3.0** (see [LICENSE](LICENSE)).

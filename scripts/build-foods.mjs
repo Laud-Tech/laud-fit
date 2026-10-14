@@ -2,7 +2,7 @@
 // One-off conversion of GymMane's food tables (assets/data/foods.tsv and dishes.tsv, GPL-3.0,
 // "Based on GymMane by InlitX") into the compact JSON the Nutrition screen loads on demand.
 //   node scripts/build-foods.mjs <gymmane/assets/data>   ->  frontend/src/data/foods.json
-// Photos are deliberately not carried over: their origin is not stated upstream.
+// The photos (assets/food/*.webp) are copied as they are to frontend/public/food/ — see NOTICE.md.
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
