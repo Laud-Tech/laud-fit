@@ -1,6 +1,7 @@
 // Mobile build only, first launch: the choice useStore.boot() couldn't make on its own — keep
 // everything on this device, or connect to a self-hosted Laud Fit server instead. See
 // lib/remote.js for the pairing flow this hands off to.
+import logo from '../assets/logo.png'
 import { useState, useRef, useEffect } from 'react'
 import { useStore } from '../store/useStore.js'
 import { useUI } from '../store/useUI.js'
@@ -123,8 +124,8 @@ export function ConnectSheet({ close, initialUrl = '', again = false }) {
 export default function MobileOnboarding() {
   const { chooseLocalMode } = useStore()
   const head = <>
-    <div style={{ fontSize: 54, display: 'flex', justifyContent: 'center', color: 'var(--acc)' }}><Icon name="dumbbell" /></div>
-    <h1 style={{ fontSize: 34, fontWeight: 700, letterSpacing: '-.028em', margin: '10px 0 4px' }}>Laud Fit</h1>
+    <img src={logo} alt="Laud Fit" width="132" height="132" style={{ display: 'block', margin: '0 auto 8px', borderRadius: '50%' }} />
+    <h1 className="sr-only" style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clip: 'rect(0 0 0 0)' }}>Laud Fit</h1>
   </>
   const wrap = { display: 'flex', flexDirection: 'column', justifyContent: 'center', minHeight: '78vh', textAlign: 'center' }
   return (
