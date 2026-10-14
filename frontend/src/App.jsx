@@ -46,6 +46,8 @@ import CoachChat from './views/CoachChat.jsx'
 import Measurements from './views/Measurements.jsx'
 import Cardio from './views/Cardio.jsx'
 import Nutrition from './views/Nutrition.jsx'
+import Awards from './views/Awards.jsx'
+import Tools from './views/Tools.jsx'
 import CoachIntake from './views/CoachIntake.jsx'
 import CoachSetup from './views/CoachSetup.jsx'
 
@@ -222,6 +224,8 @@ function Shell() {
               <Route path="/measurements" element={<Measurements />} />
               <Route path="/cardio" element={<Cardio />} />
               <Route path="/nutrition" element={<Nutrition />} />
+              <Route path="/awards" element={<Awards />} />
+              <Route path="/tools" element={<Tools />} />
               <Route path="/settings" element={<SettingsRoute />} />
               <Route path="/settings/:page" element={<SettingsRoute />} />
               {/* The Coach screens gate themselves on the instance config; the routes exist

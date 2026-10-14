@@ -677,6 +677,16 @@ export default function Stats() {
       <Button size="sm" variant="tinted" trailingIcon="chevronRight" style={{ flexShrink: 0 }} onClick={() => nav('/cardio')}>{t('Open')}</Button>
     </div>
     <div className="card row between" style={{ alignItems: 'center', gap: 12 }}>
+      <div style={{ minWidth: 0 }}><h2 style={{ margin: 0 }}>{t('Medals')}</h2>
+        <div className="muted small" style={{ marginTop: 4 }}>{t('Level, streaks and milestones')}</div></div>
+      <Button size="sm" variant="tinted" trailingIcon="chevronRight" style={{ flexShrink: 0 }} onClick={() => nav('/awards')}>{t('Open')}</Button>
+    </div>
+    <div className="card row between" style={{ alignItems: 'center', gap: 12 }}>
+      <div style={{ minWidth: 0 }}><h2 style={{ margin: 0 }}>{t('Calculators')}</h2>
+        <div className="muted small" style={{ marginTop: 4 }}>{t('BMI, calories, body fat, water and 1RM')}</div></div>
+      <Button size="sm" variant="tinted" trailingIcon="chevronRight" style={{ flexShrink: 0 }} onClick={() => nav('/tools')}>{t('Open')}</Button>
+    </div>
+    <div className="card row between" style={{ alignItems: 'center', gap: 12 }}>
       <div style={{ minWidth: 0 }}><h2 style={{ margin: 0 }}>{t('Body measurements')}</h2>
         <div className="muted small" style={{ marginTop: 4 }}>{(S.measurements || []).length
           ? t('Last check-in {0}', fmtDate(S.measurements[S.measurements.length - 1].d, true))
