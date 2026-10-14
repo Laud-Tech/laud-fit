@@ -2304,4 +2304,6 @@ export default {
   'Stair climbing': 'ขึ้นบันได',
   'Jump rope': 'กระโดดเชือก',
   'Other cardio': 'คาร์ดิโออื่น ๆ',
+  'Show map background': 'แสดงแผนที่เป็นพื้นหลัง',
+  'Loads map tiles from OpenStreetMap, which sees the area you look at.': 'โหลดแผนที่จาก OpenStreetMap ซึ่งมองเห็นพื้นที่ที่คุณดู',
 }

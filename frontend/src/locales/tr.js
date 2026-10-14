@@ -2293,4 +2293,6 @@ export default {
   'Stair climbing': 'Merdiven çıkma',
   'Jump rope': 'İp atlama',
   'Other cardio': 'Diğer kardiyo',
+  'Show map background': 'Harita arka planını göster',
+  'Loads map tiles from OpenStreetMap, which sees the area you look at.': 'Haritayı, baktığınız bölgeyi görebilen OpenStreetMap’ten yükler.',
 }

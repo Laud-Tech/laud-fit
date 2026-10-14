@@ -2293,4 +2293,6 @@ export default {
   'Stair climbing': 'सीढ़ियाँ चढ़ना',
   'Jump rope': 'रस्सी कूदना',
   'Other cardio': 'अन्य कार्डियो',
+  'Show map background': 'पृष्ठभूमि में नक्शा दिखाएँ',
+  'Loads map tiles from OpenStreetMap, which sees the area you look at.': 'नक्शा OpenStreetMap से लोड होता है, जो आपके देखे गए इलाके को देख सकता है।',
 }

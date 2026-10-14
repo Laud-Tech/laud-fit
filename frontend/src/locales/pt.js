@@ -2293,4 +2293,6 @@ export default {
   'Stair climbing': 'Subir escadas',
   'Jump rope': 'Saltar à corda',
   'Other cardio': 'Outro cardio',
+  'Show map background': 'Mostrar mapa em fundo',
+  'Loads map tiles from OpenStreetMap, which sees the area you look at.': 'Carrega o mapa do OpenStreetMap, que vê a zona que está a consultar.',
 }

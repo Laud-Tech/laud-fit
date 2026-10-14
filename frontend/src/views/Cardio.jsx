@@ -13,7 +13,7 @@ import {
 import { bind, getCardio, subscribe, saveSession, removeSession, flush, getTrack, loadDraft, saveDraft, clearDraft } from '../lib/cardio-sync.js'
 import Icon from '../components/Icon.jsx'
 import RouteMap from '../components/RouteMap.jsx'
-import { Button, NumberField, Section, Segmented, SelectRow, TextField } from '../components/ui.jsx'
+import { Button, NumberField, Section, Segmented, SelectRow, Switch, TextField } from '../components/ui.jsx'
 import { confirmSheet } from '../sheets.jsx'
 
 const LABEL = {
@@ -30,6 +30,10 @@ const dayOf = ms => { const d = new Date(ms); return `${d.getFullYear()}-${Strin
 const fmtWhen = ms => new Date(ms).toLocaleString(undefined, { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
 // Body weight is stored in the profile's unit; calories want kg. 70 kg when nothing was ever logged.
 const weightKg = S => { const w = lastBW(S)?.w; return w ? (S.unit === 'lb' ? w / 2.2046226218 : w) : 70 }
+
+// Per device, not in the synced profile: tiles are a privacy choice about this browser's requests.
+const MAP_KEY = 'laudfit_map_tiles'
+const tilesOn = () => { try { return localStorage.getItem(MAP_KEY) === '1' } catch { return false } }
 
 const useCardio = () => useSyncExternalStore(subscribe, getCardio)
 
@@ -52,6 +56,8 @@ const Grid = ({ items }) => <div className="cols" style={{ gridTemplateColumns: 
 
 function Detail({ s, close }) {
   const [pts, setPts] = useState(undefined)   // undefined = loading, null = could not load
+  const [tiles, setTiles] = useState(tilesOn)
+  const flip = on => { setTiles(on); try { localStorage.setItem(MAP_KEY, on ? '1' : '0') } catch { /* stays for this view only */ } }
   useEffect(() => { if (s.has_track) getTrack(s.id).then(setPts); else setPts([]) }, [s.id, s.has_track])
   const sp = useMemo(() => (pts && pts.length > 1 ? splits(pts) : []), [pts])
   const efforts = useMemo(() => (pts && pts.length > 1 ? EFFORTS.map(d => [d, bestEffort(pts, d)]).filter(e => e[1]) : []), [pts])
@@ -73,7 +79,12 @@ function Detail({ s, close }) {
     {s.source !== 'gps' && <div className="muted small" style={{ marginTop: 8 }}>{s.source === 'estimated' ? t('Distance estimated from speed and time.') : t('Entered by hand.')}</div>}
     {pts === undefined && <div className="muted small" style={{ marginTop: 12 }}>{t('Loading route…')}</div>}
     {pts === null && <div className="muted small" style={{ marginTop: 12 }}>{t('Route unavailable offline.')}</div>}
-    {pts && pts.length > 1 && <div style={{ marginTop: 12 }}><RouteMap points={pts} /></div>}
+    {pts && pts.length > 1 && <div style={{ marginTop: 12 }}>
+      <RouteMap points={pts} tiles={tiles} />
+      <div className="lrow"><span className="lrow-m"><span className="lrow-t">{t('Show map background')}</span>
+        <span className="lrow-s">{t('Loads map tiles from OpenStreetMap, which sees the area you look at.')}</span></span>
+        <Switch checked={tiles} onChange={flip} /></div>
+    </div>}
     {efforts.length > 0 && <Section title={t('Best efforts')}>
       {efforts.map(([d, sec]) => <div className="lrow" key={d}><span className="lrow-m"><span className="lrow-t">{d / 1000} km</span></span><span>{fmtDuration(sec)}</span></div>)}
     </Section>}

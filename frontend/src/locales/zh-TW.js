@@ -2286,4 +2286,6 @@ export default {
   'Stair climbing': '爬樓梯',
   'Jump rope': '跳繩',
   'Other cardio': '其他有氧',
+  'Show map background': '顯示地圖背景',
+  'Loads map tiles from OpenStreetMap, which sees the area you look at.': '從 OpenStreetMap 載入地圖，OpenStreetMap 能看到你查看的區域。',
 }

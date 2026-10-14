@@ -2296,4 +2296,6 @@ export default {
   'Stair climbing': 'Lépcsőzés',
   'Jump rope': 'Ugrókötelezés',
   'Other cardio': 'Egyéb kardió',
+  'Show map background': 'Térkép megjelenítése a háttérben',
+  'Loads map tiles from OpenStreetMap, which sees the area you look at.': 'A térképet az OpenStreetMap tölti be, amely látja a megnézett területet.',
 }

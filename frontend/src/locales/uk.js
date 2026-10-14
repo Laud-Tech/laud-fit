@@ -2290,4 +2290,6 @@ export default {
   'Stair climbing': 'Підйом сходами',
   'Jump rope': 'Скакалка',
   'Other cardio': 'Інше кардіо',
+  'Show map background': 'Показувати карту на тлі',
+  'Loads map tiles from OpenStreetMap, which sees the area you look at.': 'Завантажує карту з OpenStreetMap, який бачить область, яку ви переглядаєте.',
 }

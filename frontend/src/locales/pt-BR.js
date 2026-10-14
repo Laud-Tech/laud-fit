@@ -1454,6 +1454,8 @@ export const PT_BR_OVERRIDES = {
   'Stair climbing': 'Escada',
   'Jump rope': 'Pular corda',
   'Other cardio': 'Outro cardio',
+  'Show map background': 'Mostrar mapa ao fundo',
+  'Loads map tiles from OpenStreetMap, which sees the area you look at.': 'Carrega o mapa do OpenStreetMap, que vê a região que você está olhando.',
 }
 
 export default { ...pt, ...PT_BR_OVERRIDES }

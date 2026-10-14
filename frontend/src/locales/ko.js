@@ -2293,4 +2293,6 @@ export default {
   'Stair climbing': '계단 오르기',
   'Jump rope': '줄넘기',
   'Other cardio': '기타 유산소',
+  'Show map background': '배경 지도 표시',
+  'Loads map tiles from OpenStreetMap, which sees the area you look at.': 'OpenStreetMap에서 지도를 불러오며, OpenStreetMap은 보고 있는 지역을 알 수 있습니다.',
 }

@@ -2372,4 +2372,6 @@ export default {
   'Stair climbing': 'সিঁড়ি ভাঙা',
   'Jump rope': 'দড়ি লাফ',
   'Other cardio': 'অন্যান্য কার্ডিও',
+  'Show map background': 'পেছনে মানচিত্র দেখান',
+  'Loads map tiles from OpenStreetMap, which sees the area you look at.': 'মানচিত্র OpenStreetMap থেকে লোড হয়, যারা আপনার দেখা এলাকা দেখতে পায়।',
 }

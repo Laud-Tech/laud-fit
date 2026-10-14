@@ -2348,4 +2348,6 @@ export default {
   'Stair climbing': 'صعود الدرج',
   'Jump rope': 'نط الحبل',
   'Other cardio': 'كارديو آخر',
+  'Show map background': 'إظهار الخريطة في الخلفية',
+  'Loads map tiles from OpenStreetMap, which sees the area you look at.': 'يحمّل الخريطة من OpenStreetMap، الذي يرى المنطقة التي تعرضها.',
 }

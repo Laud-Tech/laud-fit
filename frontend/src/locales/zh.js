@@ -2293,4 +2293,6 @@ export default {
   'Stair climbing': '爬楼梯',
   'Jump rope': '跳绳',
   'Other cardio': '其他有氧',
+  'Show map background': '显示地图背景',
+  'Loads map tiles from OpenStreetMap, which sees the area you look at.': '从 OpenStreetMap 加载地图，OpenStreetMap 能看到你查看的区域。',
 }

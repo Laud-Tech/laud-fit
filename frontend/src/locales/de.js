@@ -2313,4 +2313,6 @@ export default {
   'Stair climbing': 'Treppensteigen',
   'Jump rope': 'Seilspringen',
   'Other cardio': 'Anderes Cardio',
+  'Show map background': 'Kartenhintergrund anzeigen',
+  'Loads map tiles from OpenStreetMap, which sees the area you look at.': 'Lädt die Karte von OpenStreetMap, das den angezeigten Bereich sieht.',
 }

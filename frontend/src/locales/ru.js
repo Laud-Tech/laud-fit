@@ -2297,4 +2297,6 @@ export default {
   'Stair climbing': 'Подъём по лестнице',
   'Jump rope': 'Скакалка',
   'Other cardio': 'Другое кардио',
+  'Show map background': 'Показывать карту на фоне',
+  'Loads map tiles from OpenStreetMap, which sees the area you look at.': 'Загружает карту с OpenStreetMap, который видит просматриваемый район.',
 }
