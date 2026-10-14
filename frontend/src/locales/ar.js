@@ -2437,4 +2437,13 @@ export default {
   '{0} of {1} earned': '{0} من {1} تم الحصول عليها',
   '{0} t lifted': '{0} طن مرفوع',
   '{0}-day streak': 'سلسلة {0} يومًا',
+  'Add supplement': 'إضافة مكمل',
+  'Add the plan': 'إضافة الخطة',
+  'Average per day': 'المتوسط اليومي',
+  'Days logged': 'الأيام المسجلة',
+  'Meal plan': 'خطة الوجبات',
+  'Plan saved for {0}': 'تم حفظ الخطة ليوم {0}',
+  'Save as plan for {0}': 'حفظ كخطة ليوم {0}',
+  'Saves what you ate on this weekday and fills it in on the next ones.': 'يحفظ ما أكلته في هذا اليوم من الأسبوع ويملأه في الأيام التالية.',
+  'Supplements': 'المكملات',
 }

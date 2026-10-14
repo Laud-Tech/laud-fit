@@ -6,7 +6,7 @@
 import { DatabaseSync } from 'node:sqlite';
 import path from 'node:path';
 
-export const KINDS = ['day', 'food', 'goal', 'plan'];
+export const KINDS = ['day', 'food', 'goal', 'plan', 'supp'];
 export const MAX_DOC_BYTES = 64 * 1024;
 export const MAX_DOCS = 20000;
 export const MAX_BATCH = 200;

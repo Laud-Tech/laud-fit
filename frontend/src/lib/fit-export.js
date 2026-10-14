@@ -50,6 +50,7 @@ export const BASE = {
   uint8: [0x02, 1, 0xFF],
   uint16: [0x84, 2, 0xFFFF],
   uint32: [0x86, 4, 0xFFFFFFFF],
+  sint32: [0x85, 4, 0x7FFFFFFF],
   uint32z: [0x8C, 4, 0],
   string: [0x07, 0, 0],
 }
@@ -104,8 +105,9 @@ export function encodeFit(messages) {
       } else {
         // A number that does not fit its type is not recorded rather than wrapped round.
         const n = v == null ? f.invalid : Math.round(Number(v))
-        const max = f.size === 1 ? 0xFF : f.size === 2 ? 0xFFFF : 0xFFFFFFFF
-        const val = n < 0 || n > max ? f.invalid : n
+        const signed = f.type === 'sint32'   // two's complement, e.g. a latitude south of the equator
+        const max = signed ? 0x7FFFFFFF : f.size === 1 ? 0xFF : f.size === 2 ? 0xFFFF : 0xFFFFFFFF
+        const val = n > max || n < (signed ? -0x80000000 : 0) ? f.invalid : n >>> 0
         if (f.size === 1) u8(val); else if (f.size === 2) u16(val); else u32(val)
       }
     }
@@ -130,7 +132,7 @@ export function encodeFit(messages) {
 
 /* ------------------------------------------------------- the FIT profile bits -- */
 
-export const MSG = { fileId: 0, session: 18, lap: 19, event: 21, deviceInfo: 23, activity: 34, fileCreator: 49, set: 225 }
+export const MSG = { fileId: 0, session: 18, lap: 19, record: 20, event: 21, deviceInfo: 23, activity: 34, fileCreator: 49, set: 225 }
 export const SPORT = { generic: 0, running: 1, cycling: 2, fitnessEquipment: 4, training: 10, walking: 11, rowing: 15 }
 export const SUB_SPORT = { generic: 0, treadmill: 1, indoorCycling: 6, indoorRowing: 14, elliptical: 15, stairClimbing: 16, strengthTraining: 20, cardioTraining: 26 }
 const MANUFACTURER_DEVELOPMENT = 255

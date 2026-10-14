@@ -3,12 +3,14 @@ import { useNavigate } from 'react-router-dom'
 import { useStore } from '../store/useStore.js'
 import { useUI } from '../store/useUI.js'
 import { lastBW } from '../lib/history.js'
+import { speedUnitOf } from '../lib/speed.js'
+import { cardioFit } from '../lib/cardio-fit.js'
 import { todayISO, uid } from '../lib/format.js'
 import { t } from '../lib/i18n.js'
 import { useWakeLock } from '../lib/wakelock.js'
 import {
   ACTIVITIES, INDOOR_ONLY, GPS_CAPABLE, EFFORTS, filterTrack, trackStats, splits, bestEffort, caloriesFor,
-  avgSpeedKmh, paceOf, fmtPace, fmtDuration, fmtDistance, toGpx
+  avgSpeedKmh, paceOf, fmtPace, fmtDuration, fmtDistance, toGpx, fmtDist, fmtPaceU, fmtSpeedU, splitSize, toKm, M_PER_MI
 } from '../lib/cardio.js'
 import { bind, getCardio, subscribe, saveSession, removeSession, flush, getTrack, loadDraft, saveDraft, clearDraft } from '../lib/cardio-sync.js'
 import Icon from '../components/Icon.jsx'
@@ -35,15 +37,16 @@ const weightKg = S => { const w = lastBW(S)?.w; return w ? (S.unit === 'lb' ? w 
 const MAP_KEY = 'laudfit_map_tiles'
 const tilesOn = () => { try { return localStorage.getItem(MAP_KEY) === '1' } catch { return false } }
 
+const useImp = () => speedUnitOf(useStore(s => s.S)) === 'mph'
 const useCardio = () => useSyncExternalStore(subscribe, getCardio)
 
-function stats(s) {
+function stats(s, imp) {
   const v = avgSpeedKmh(s)
   return [
-    [t('Distance'), s.distance_m != null ? fmtDistance(s.distance_m) : '–'],
+    [t('Distance'), s.distance_m != null ? fmtDist(s.distance_m, imp) : '–'],
     [t('Time'), fmtDuration(s.duration_s)],
-    [t('Pace'), paceOf(s) ? fmtPace(paceOf(s)) + ' /km' : '–'],
-    [t('Speed'), v ? v.toFixed(1) + ' km/h' : '–'],
+    [t('Pace'), paceOf(s) ? fmtPaceU(paceOf(s), imp) : '–'],
+    [t('Speed'), v ? fmtSpeedU(v, imp) : '–'],
     [t('Calories'), s.calories != null ? '≈ ' + Math.round(s.calories) + ' kcal' : '–'],
     [t('Elevation'), s.elev_gain_m ? '+' + Math.round(s.elev_gain_m) + ' m' : '–']
   ]
@@ -55,11 +58,18 @@ const Grid = ({ items }) => <div className="cols" style={{ gridTemplateColumns: 
 /* ---------------------------------- detail ---------------------------------- */
 
 function Detail({ s, close }) {
+  const imp = useImp()
+  const saveFit = () => {
+    const a = document.createElement('a')
+    a.href = URL.createObjectURL(new Blob([cardioFit(s, pts || [], { version: __APP_VERSION__ })], { type: 'application/octet-stream' }))
+    a.download = `laudfit-${dayOf(s.started)}-${s.activity}.fit`
+    a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000)
+  }
   const [pts, setPts] = useState(undefined)   // undefined = loading, null = could not load
   const [tiles, setTiles] = useState(tilesOn)
   const flip = on => { setTiles(on); try { localStorage.setItem(MAP_KEY, on ? '1' : '0') } catch { /* stays for this view only */ } }
   useEffect(() => { if (s.has_track) getTrack(s.id).then(setPts); else setPts([]) }, [s.id, s.has_track])
-  const sp = useMemo(() => (pts && pts.length > 1 ? splits(pts) : []), [pts])
+  const sp = useMemo(() => (pts && pts.length > 1 ? splits(pts, splitSize(imp)) : []), [pts, imp])
   const efforts = useMemo(() => (pts && pts.length > 1 ? EFFORTS.map(d => [d, bestEffort(pts, d)]).filter(e => e[1]) : []), [pts])
   const gpx = () => {
     const x = toGpx(s, pts)
@@ -75,7 +85,7 @@ function Detail({ s, close }) {
   return <>
     <h3>{t(LABEL[s.activity])} · {s.env === 'indoor' ? t('Indoor') : t('Outdoor')}</h3>
     <div className="muted small" style={{ marginBottom: 12 }}>{fmtWhen(s.started)}{s.note ? ' · ' + s.note : ''}</div>
-    <Grid items={stats(s)} />
+    <Grid items={stats(s, imp)} />
     {s.source !== 'gps' && <div className="muted small" style={{ marginTop: 8 }}>{s.source === 'estimated' ? t('Distance estimated from speed and time.') : t('Entered by hand.')}</div>}
     {pts === undefined && <div className="muted small" style={{ marginTop: 12 }}>{t('Loading route…')}</div>}
     {pts === null && <div className="muted small" style={{ marginTop: 12 }}>{t('Route unavailable offline.')}</div>}
@@ -89,11 +99,12 @@ function Detail({ s, close }) {
       {efforts.map(([d, sec]) => <div className="lrow" key={d}><span className="lrow-m"><span className="lrow-t">{d / 1000} km</span></span><span>{fmtDuration(sec)}</span></div>)}
     </Section>}
     {sp.length > 0 && <Section title={t('Splits')}>
-      {sp.map(x => <div className="lrow" key={x.n}><span className="lrow-m"><span className="lrow-t">{x.partial ? fmtDistance(x.distance_m) : x.n + ' km'}</span></span>
-        <span>{fmtPace(x.s / (x.distance_m / 1000))} /km</span></div>)}
+      {sp.map(x => <div className="lrow" key={x.n}><span className="lrow-m"><span className="lrow-t">{x.partial ? fmtDist(x.distance_m, imp) : x.n + (imp ? ' mi' : ' km')}</span></span>
+        <span>{fmtPaceU(x.s / (x.distance_m / 1000), imp)}</span></div>)}
     </Section>}
     <div style={{ height: 14 }} />
     {pts && pts.length > 1 && <><Button icon="download" onClick={gpx}>{t('Export GPX')}</Button><div style={{ height: 8 }} /></>}
+    <Button icon="download" onClick={saveFit}>{t('Export as .fit file')}</Button><div style={{ height: 8 }} />
     <Button variant="ghost" icon="trash" onClick={del}>{t('Delete')}</Button>
     <div style={{ height: 8 }} />
     <Button variant="ghost" className="dim" onClick={close}>{t('Close')}</Button>
@@ -105,6 +116,7 @@ const detailSheet = s => useUI.getState().openSheet(close => <Detail s={s} close
 
 function Manual({ preset, close }) {
   const S = useStore(s => s.S)
+  const imp = useImp()
   const [activity, setActivity] = useState(preset.activity)
   const [env, setEnv] = useState(preset.env)
   const [date, setDate] = useState(todayISO())
@@ -120,7 +132,7 @@ function Manual({ preset, close }) {
     const started = new Date(`${date}T${time}`).getTime()
     if (!(started > 0) || started > Date.now()) { toast(t('Choose a valid date')); return }
     // Distance typed wins; otherwise speed x time (a treadmill shows speed, not distance).
-    const dist = km > 0 ? Math.round(km * 1000) : speed > 0 ? Math.round(speed * 1000 * duration / 3600) : null
+    const dist = km > 0 ? Math.round(toKm(km, imp) * 1000) : speed > 0 ? Math.round(toKm(speed, imp) * 1000 * duration / 3600) : null
     saveSession({
       id: uid().padEnd(8, '0') + Math.random().toString(36).slice(2, 8), activity, env, source: km > 0 ? 'manual' : dist ? 'estimated' : 'manual', started,
       duration_s: duration, moving_s: duration, distance_m: dist, elev_gain_m: null,
@@ -137,8 +149,8 @@ function Manual({ preset, close }) {
       <label className="measure-field"><span>{t('Date')}</span><input className="field" type="date" value={date} max={todayISO()} onChange={e => setDate(e.target.value)} /></label>
       <label className="measure-field"><span>{t('Start')}</span><input className="field" type="time" value={time} onChange={e => setTime(e.target.value)} /></label>
       <label className="measure-field"><span>{t('Duration')}</span><span className="measure-input"><NumberField value={min} onChange={setMin} /><i>min</i></span></label>
-      <label className="measure-field"><span>{t('Distance')}</span><span className="measure-input"><NumberField nullable value={km} onChange={setKm} /><i>km</i></span></label>
-      <label className="measure-field"><span>{t('Average speed')}</span><span className="measure-input"><NumberField nullable value={speed} onChange={setSpeed} /><i>km/h</i></span></label>
+      <label className="measure-field"><span>{t('Distance')}</span><span className="measure-input"><NumberField nullable value={km} onChange={setKm} /><i>{imp ? 'mi' : 'km'}</i></span></label>
+      <label className="measure-field"><span>{t('Average speed')}</span><span className="measure-input"><NumberField nullable value={speed} onChange={setSpeed} /><i>{imp ? 'mph' : 'km/h'}</i></span></label>
     </div>
     <div className="muted small" style={{ margin: '6px 0 10px' }}>{t('Without a distance, the speed and the time give an estimate. Leave both empty if you do not know.')}</div>
     <TextField placeholder={t('Note')} value={note} onChange={e => setNote(e.target.value)} />
@@ -157,6 +169,7 @@ const manualSheet = preset => useUI.getState().openSheet(close => <Manual preset
 // joins the last fix before to the first after counts as distance. Add a track-break marker if
 // people walk during a pause.
 function Recorder({ cfg, onDone }) {
+  const imp = useImp()
   const S = useStore(s => s.S)
   const [rec, setRec] = useState(() => cfg.resume || { id: uid().padEnd(8, '0') + Math.random().toString(36).slice(2, 8), started: Date.now(), paused: 0, pausedAt: null, pts: [] })
   const [, tick] = useState(0)
@@ -206,8 +219,8 @@ function Recorder({ cfg, onDone }) {
     <div className="card" style={{ textAlign: 'center' }}>
       <div className="big" style={{ fontSize: '3rem' }}>{fmtDuration(elapsed)}</div>
       {useGps && <>
-        <div className="big" style={{ marginTop: 6 }}>{fmtDistance(live.distance_m)}</div>
-        <div className="muted small">{paceOf(cur) ? fmtPace(paceOf(cur)) + ' /km' : '– /km'}{live.elev_gain_m ? ` · +${live.elev_gain_m} m` : ''}</div>
+        <div className="big" style={{ marginTop: 6 }}>{fmtDist(live.distance_m, imp)}</div>
+        <div className="muted small">{paceOf(cur) ? fmtPaceU(paceOf(cur), imp) : '– ' + (imp ? '/mi' : '/km')}{live.elev_gain_m ? ` · +${live.elev_gain_m} m` : ''}</div>
         {gpsErr && !good.length && <div className="small" style={{ color: 'var(--orange)', marginTop: 8 }}>{gpsErr}</div>}
         {!navigator.geolocation && <div className="small" style={{ color: 'var(--orange)', marginTop: 8 }}>{t('This device has no GPS.')}</div>}
       </>}
@@ -225,6 +238,7 @@ function Recorder({ cfg, onDone }) {
 /* ------------------------------------ screen ------------------------------------ */
 
 export default function Cardio() {
+  const imp = useImp()
   const nav = useNavigate()
   const user = useStore(s => s.user)
   const { sessions } = useCardio()
@@ -257,7 +271,7 @@ export default function Cardio() {
       </div>
     </div>
     <Section title={t('Last 7 days')}>
-      <Grid items={[[t('Activities'), String(week.n)], [t('Distance'), fmtDistance(week.d)], [t('Time'), fmtDuration(week.m)]]} />
+      <Grid items={[[t('Activities'), String(week.n)], [t('Distance'), fmtDist(week.d, imp)], [t('Time'), fmtDuration(week.m)]]} />
     </Section>
     <Section title={t('History')}>
       {sessions.length === 0 && <div className="empty small">{t('No activities yet.')}</div>}
@@ -265,7 +279,7 @@ export default function Cardio() {
         <Icon name={ICON[s.activity] || 'timer'} />
         <span className="lrow-m"><span className="lrow-t">{t(LABEL[s.activity])} · {s.env === 'indoor' ? t('Indoor') : t('Outdoor')}</span>
           <span className="lrow-s">{fmtWhen(s.started)}</span></span>
-        <span style={{ textAlign: 'right' }}>{s.distance_m != null ? fmtDistance(s.distance_m) : fmtDuration(s.duration_s)}
+        <span style={{ textAlign: 'right' }}>{s.distance_m != null ? fmtDist(s.distance_m, imp) : fmtDuration(s.duration_s)}
           {s.distance_m != null && <div className="muted small">{fmtDuration(s.duration_s)}</div>}</span>
       </button>)}
     </Section>

@@ -1521,7 +1521,7 @@ paths:
       operationId: getNutritionDocs
       summary: Documents changed since a time
       description: >-
-        Every document of the caller (`kind` is `day`, `food`, `goal` or `plan`) whose server
+        Every document of the caller (`kind` is `day`, `food`, `goal`, `plan` or `supp`) whose server
         `updated` is later than `since` (Unix ms; 0 or absent for all), and `now`, the server time to
         pass as `since` next time.
       parameters:
@@ -1539,7 +1539,7 @@ paths:
                     items:
                       type: object
                       properties:
-                        kind: { type: string, enum: [day, food, goal, plan] }
+                        kind: { type: string, enum: [day, food, goal, plan, supp] }
                         id: { type: string }
                         data: { type: object }
                         updated: { type: integer }
@@ -1566,7 +1566,7 @@ paths:
                     type: object
                     required: [kind, id, data]
                     properties:
-                      kind: { type: string, enum: [day, food, goal, plan] }
+                      kind: { type: string, enum: [day, food, goal, plan, supp] }
                       id: { type: string }
                       data: { type: object }
                 del:
@@ -1575,7 +1575,7 @@ paths:
                     type: object
                     required: [kind, id]
                     properties:
-                      kind: { type: string, enum: [day, food, goal, plan] }
+                      kind: { type: string, enum: [day, food, goal, plan, supp] }
                       id: { type: string }
       responses:
         '200':

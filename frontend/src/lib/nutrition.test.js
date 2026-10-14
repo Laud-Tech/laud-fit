@@ -100,3 +100,29 @@ describe('the bundled data', () => {
 describe('mealForHour', () => {
   it('picks a default meal', () => { expect([6, 12, 17, 20].map(mealForHour)).toEqual(['breakfast', 'lunch', 'snacks', 'dinner']) })
 })
+
+import { weekSummary, planWith, planEntries, toggleSupp, weekdayOf } from './nutrition.js'
+describe('week, plan, supplements', () => {
+  const e = (k, id = 'a') => ({ id, t: 1, meal: 'lunch', food: 'rice', name: 'Rice', grams: 100, m: { k, p: 1, c: 2, f: 3, fi: 0, su: 0, na: 0 } })
+  it('weekSummary averages only logged days', () => {
+    const w = weekSummary({ '2026-10-13': { entries: [e(500)], water: 1000 }, '2026-10-14': { entries: [e(700)], water: 2000 }, '2026-10-01': { entries: [e(9999)] } }, '2026-10-14')
+    expect(w.rows).toHaveLength(7)
+    expect(w.rows[6].date).toBe('2026-10-14')
+    expect(w.logged).toBe(2)
+    expect(w.avg.k).toBe(600)
+    expect(w.avg.water).toBe(1500)
+  })
+  it('plan round trip drops ids, applying gives new ones', () => {
+    const plan = planWith({}, 3, [e(500, 'x')])
+    expect(plan[3][0].id).toBeUndefined()
+    const got = planEntries(plan, 3, () => 'new', 5)
+    expect(got).toEqual([{ ...plan[3][0], id: 'new', t: 5 }])
+    expect(planEntries(plan, 4, () => 'n')).toEqual([])
+    expect(planWith(plan, 3, [])).toEqual({})
+  })
+  it('weekdayOf and toggleSupp', () => {
+    expect(weekdayOf('2026-10-14')).toBe(3)
+    expect(toggleSupp(['a'], 'b')).toEqual(['a', 'b'])
+    expect(toggleSupp(['a', 'b'], 'a')).toEqual(['b'])
+  })
+})

@@ -2375,4 +2375,13 @@ export default {
   '{0} of {1} earned': '已獲得 {0}/{1}',
   '{0} t lifted': '累計舉起 {0} 噸',
   '{0}-day streak': '連續 {0} 天',
+  'Add supplement': '新增補充品',
+  'Add the plan': '新增計畫',
+  'Average per day': '日均',
+  'Days logged': '已記錄天數',
+  'Meal plan': '飲食計畫',
+  'Plan saved for {0}': '已儲存 {0} 的計畫',
+  'Save as plan for {0}': '儲存為 {0} 的計畫',
+  'Saves what you ate on this weekday and fills it in on the next ones.': '儲存你在每週這一天吃的東西，之後同一天可一鍵填入。',
+  'Supplements': '補充品',
 }

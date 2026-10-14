@@ -2382,4 +2382,13 @@ export default {
   '{0} of {1} earned': '{1}개 중 {0}개 획득',
   '{0} t lifted': '{0} t 들어올림',
   '{0}-day streak': '{0}일 연속',
+  'Add supplement': '보충제 추가',
+  'Add the plan': '계획 추가',
+  'Average per day': '일 평균',
+  'Days logged': '기록한 일수',
+  'Meal plan': '식단 계획',
+  'Plan saved for {0}': '{0} 계획 저장됨',
+  'Save as plan for {0}': '{0} 계획으로 저장',
+  'Saves what you ate on this weekday and fills it in on the next ones.': '이 요일에 먹은 것을 저장하고 다음 같은 요일에 채워 넣습니다.',
+  'Supplements': '보충제',
 }

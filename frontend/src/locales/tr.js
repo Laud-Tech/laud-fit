@@ -2382,4 +2382,13 @@ export default {
   '{0} of {1} earned': '{0} / {1} kazanıldı',
   '{0} t lifted': '{0} t kaldırıldı',
   '{0}-day streak': '{0} günlük seri',
+  'Add supplement': 'Takviye ekle',
+  'Add the plan': 'Planı ekle',
+  'Average per day': 'Günlük ortalama',
+  'Days logged': 'Kaydedilen gün',
+  'Meal plan': 'Yemek planı',
+  'Plan saved for {0}': '{0} için plan kaydedildi',
+  'Save as plan for {0}': '{0} planı olarak kaydet',
+  'Saves what you ate on this weekday and fills it in on the next ones.': 'Haftanın bu gününde yediklerinizi kaydeder ve sonraki günlerde doldurur.',
+  'Supplements': 'Takviyeler',
 }

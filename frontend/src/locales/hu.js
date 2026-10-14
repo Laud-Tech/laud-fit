@@ -2385,4 +2385,13 @@ export default {
   '{0} of {1} earned': '{0} / {1} megszerezve',
   '{0} t lifted': '{0} t megemelve',
   '{0}-day streak': '{0} napos sorozat',
+  'Add supplement': 'Étrend-kiegészítő hozzáadása',
+  'Add the plan': 'Terv hozzáadása',
+  'Average per day': 'Napi átlag',
+  'Days logged': 'Rögzített napok',
+  'Meal plan': 'Étkezési terv',
+  'Plan saved for {0}': 'Terv mentve: {0}',
+  'Save as plan for {0}': 'Mentés tervként: {0}',
+  'Saves what you ate on this weekday and fills it in on the next ones.': 'Elmenti, mit ettél a hét ezen napján, és a következőkön kitölti.',
+  'Supplements': 'Étrend-kiegészítők',
 }

@@ -2379,4 +2379,13 @@ export default {
   '{0} of {1} earned': '{0} з {1} отримано',
   '{0} t lifted': '{0} т піднято',
   '{0}-day streak': 'Серія {0} дн.',
+  'Add supplement': 'Додати добавку',
+  'Add the plan': 'Додати план',
+  'Average per day': 'У середньому за день',
+  'Days logged': 'Днів із записами',
+  'Meal plan': 'План харчування',
+  'Plan saved for {0}': 'План збережено для: {0}',
+  'Save as plan for {0}': 'Зберегти як план: {0}',
+  'Saves what you ate on this weekday and fills it in on the next ones.': 'Зберігає, що ви їли цього дня тижня, і підставляє в наступні.',
+  'Supplements': 'Добавки',
 }

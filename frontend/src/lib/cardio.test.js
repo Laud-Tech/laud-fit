@@ -106,3 +106,20 @@ describe('toGpx', () => {
   })
   it('is null without a route', () => expect(toGpx({ started: 1, activity: 'run' }, [[0, 1, 1]])).toBeNull())
 })
+
+import { fmtDist, fmtPaceU, fmtSpeedU, splitSize, toKm } from './cardio.js'
+describe('miles', () => {
+  it('km mode is unchanged', () => {
+    expect(fmtDist(5200, false)).toBe('5.20 km')
+    expect(fmtPaceU(330, false)).toBe('5:30 /km')
+    expect(fmtSpeedU(10, false)).toBe('10.0 km/h')
+    expect(splitSize(false)).toBe(1000)
+  })
+  it('imperial display', () => {
+    expect(fmtDist(1609.344, true)).toBe('1.00 mi')
+    expect(fmtPaceU(330, true)).toBe('8:51 /mi')
+    expect(fmtSpeedU(16.09344, true)).toBe('10.0 mph')
+    expect(toKm(1, true)).toBeCloseTo(1.609344, 6)
+    expect(toKm(5, false)).toBe(5)
+  })
+})

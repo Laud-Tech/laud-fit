@@ -2382,4 +2382,13 @@ export default {
   '{0} of {1} earned': '{0} z {1} zdobytych',
   '{0} t lifted': '{0} t podniesionych',
   '{0}-day streak': 'Seria {0} dni',
+  'Add supplement': 'Dodaj suplement',
+  'Add the plan': 'Dodaj plan',
+  'Average per day': 'Średnia dziennie',
+  'Days logged': 'Dni z wpisami',
+  'Meal plan': 'Plan posiłków',
+  'Plan saved for {0}': 'Zapisano plan na {0}',
+  'Save as plan for {0}': 'Zapisz jako plan na {0}',
+  'Saves what you ate on this weekday and fills it in on the next ones.': 'Zapisuje, co zjadłeś w ten dzień tygodnia, i uzupełnia kolejne.',
+  'Supplements': 'Suplementy',
 }

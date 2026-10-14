@@ -2386,4 +2386,13 @@ export default {
   '{0} of {1} earned': '{0} из {1} получено',
   '{0} t lifted': '{0} т поднято',
   '{0}-day streak': 'Серия {0} дн.',
+  'Add supplement': 'Добавить добавку',
+  'Add the plan': 'Добавить план',
+  'Average per day': 'В среднем за день',
+  'Days logged': 'Дней с записями',
+  'Meal plan': 'План питания',
+  'Plan saved for {0}': 'План сохранён для: {0}',
+  'Save as plan for {0}': 'Сохранить как план: {0}',
+  'Saves what you ate on this weekday and fills it in on the next ones.': 'Сохраняет, что вы ели в этот день недели, и подставляет в следующие.',
+  'Supplements': 'Добавки',
 }

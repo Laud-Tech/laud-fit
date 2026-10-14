@@ -2461,4 +2461,13 @@ export default {
   '{0} of {1} earned': '{1}-এর মধ্যে {0} অর্জিত',
   '{0} t lifted': '{0} টন তোলা',
   '{0}-day streak': '{0} দিনের ধারা',
+  'Add supplement': 'সাপ্লিমেন্ট যোগ করুন',
+  'Add the plan': 'পরিকল্পনা যোগ করুন',
+  'Average per day': 'দৈনিক গড়',
+  'Days logged': 'রেকর্ড করা দিন',
+  'Meal plan': 'খাদ্য পরিকল্পনা',
+  'Plan saved for {0}': '{0}-এর জন্য পরিকল্পনা সংরক্ষিত',
+  'Save as plan for {0}': '{0}-এর পরিকল্পনা হিসেবে সংরক্ষণ করুন',
+  'Saves what you ate on this weekday and fills it in on the next ones.': 'সপ্তাহের এই দিনে যা খেয়েছেন তা সংরক্ষণ করে পরের দিনগুলোতে ভরে দেয়।',
+  'Supplements': 'সাপ্লিমেন্ট',
 }

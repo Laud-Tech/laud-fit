@@ -2382,4 +2382,13 @@ export default {
   '{0} of {1} earned': '已获得 {0}/{1}',
   '{0} t lifted': '累计举起 {0} 吨',
   '{0}-day streak': '连续 {0} 天',
+  'Add supplement': '添加补剂',
+  'Add the plan': '添加计划',
+  'Average per day': '日均',
+  'Days logged': '已记录天数',
+  'Meal plan': '饮食计划',
+  'Plan saved for {0}': '已保存 {0} 的计划',
+  'Save as plan for {0}': '保存为 {0} 的计划',
+  'Saves what you ate on this weekday and fills it in on the next ones.': '保存你在每周这一天吃的东西，之后同一天可一键填入。',
+  'Supplements': '补剂',
 }

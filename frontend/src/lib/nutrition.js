@@ -112,3 +112,29 @@ export function expandDish(dish, byId) {
 
 /** The meal a log entry made at `hour` belongs to by default. */
 export const mealForHour = h => (h < 11 ? 'breakfast' : h < 16 ? 'lunch' : h < 18 ? 'snacks' : 'dinner')
+
+// ---- week, plan, supplements -------------------------------------------------------------------
+const dayShift = (iso, n) => { const d = new Date(iso + 'T12:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10) }
+export const weekdayOf = iso => new Date(iso + 'T12:00:00Z').getUTCDay()
+
+/** The 7 days ending at `endISO`: per-day totals, plus the average over the days that have entries. */
+export function weekSummary(days, endISO) {
+  const rows = Array.from({ length: 7 }, (_, i) => {
+    const date = dayShift(endISO, i - 6), d = days[date], total = dayTotals(d?.entries).total
+    return { date, k: total.k, p: total.p, c: total.c, f: total.f, water: d?.water || 0, logged: !!d?.entries?.length }
+  })
+  const L = rows.filter(r => r.logged), avg = key => (L.length ? Math.round(L.reduce((a, r) => a + r[key], 0) / L.length) : 0)
+  return { rows, logged: L.length, avg: { k: avg('k'), p: avg('p'), c: avg('c'), f: avg('f'), water: avg('water') } }
+}
+
+/** plan = { [weekday 0-6]: [entry without id/time] }. Saves a day's entries as that weekday's plan. */
+export function planWith(plan, weekday, entries) {
+  const rows = entries.map(({ id, t, ...rest }) => rest)
+  const { [weekday]: _, ...others } = plan || {}
+  return rows.length ? { ...others, [weekday]: rows } : others
+}
+/** The entries a weekday's plan adds to a day (fresh ids and time), or [] when there is none. */
+export const planEntries = (plan, weekday, mkId, now = Date.now()) => (plan?.[weekday] || []).map(e => ({ ...e, id: mkId(), t: now }))
+
+/** Supplement list: [{ id, name }]. Which are taken today lives in the day: day.supp = [id]. */
+export const toggleSupp = (taken, id) => (taken.includes(id) ? taken.filter(x => x !== id) : [...taken, id])

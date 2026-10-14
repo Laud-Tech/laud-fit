@@ -3,13 +3,14 @@ import { useNavigate } from 'react-router-dom'
 import { useStore } from '../store/useStore.js'
 import { useUI } from '../store/useUI.js'
 import { lastBW } from '../lib/history.js'
-import { todayISO, isoOf, uid, fmtDate } from '../lib/format.js'
+import { todayISO, isoOf, uid, fmtDate, DAYN, DAYS } from '../lib/format.js'
 import { t, getLang, useLang } from '../lib/i18n.js'
 import {
   MEALS, ACTIVITY, macrosOf, dayTotals, portionGrams, roundMacros, searchFoods, nameOf, expandDish,
-  dailyGoal, weeksToGoal, bmi
+  dailyGoal, weeksToGoal, bmi,
+  weekSummary, planWith, planEntries, toggleSupp, weekdayOf
 } from '../lib/nutrition.js'
-import { bind, getNutrition, subscribe, editDay, dayOf, saveFood, removeFood, saveGoal, flush } from '../lib/nutrition-sync.js'
+import { bind, getNutrition, subscribe, editDay, dayOf, saveFood, removeFood, saveGoal, savePlan, saveSupp, flush } from '../lib/nutrition-sync.js'
 import { bind as bindCardio, getCardio, subscribe as subCardio } from '../lib/cardio-sync.js'
 import Icon from '../components/Icon.jsx'
 import { Button, NumberField, Section, Segmented, SelectRow, TextField } from '../components/ui.jsx'
@@ -210,6 +211,39 @@ function AddFood({ meal, date, close }) {
 }
 const addSheet = (meal, date) => useUI.getState().openSheet(close => <AddFood meal={meal} date={date} close={close} />)
 
+/* ------------------------------ week, supplements ------------------------------ */
+
+function Week({ date, goal, days, close }) {
+  const w = weekSummary(days, date)
+  const top = Math.max(goal?.kcal || 0, ...w.rows.map(r => r.k), 1)
+  return <>
+    <h3>{t('Last 7 days')}</h3>
+    <div className="row" style={{ gap: 6, alignItems: 'flex-end', height: 110 }}>
+      {w.rows.map(r => <div key={r.date} style={{ flex: 1, textAlign: 'center' }}>
+        <div title={r.k + ' kcal'} style={{ height: Math.max(2, 90 * r.k / top), background: r.logged ? 'var(--accent)' : 'var(--fill, #8883)', borderRadius: 4 }} />
+        <div className="muted small">{t(DAYS[weekdayOf(r.date)])}</div>
+      </div>)}
+    </div>
+    {w.logged ? <div className="cols" style={{ gridTemplateColumns: 'repeat(2, 1fr)', gap: 8, marginTop: 12 }}>
+      <div className="tile"><div className="l">{t('Average per day')}</div><div className="v">{w.avg.k} kcal</div></div>
+      <div className="tile"><div className="l">{t('Water')}</div><div className="v">{(w.avg.water / 1000).toFixed(1)} L</div></div>
+      <div className="tile"><div className="l">{t('Protein')}</div><div className="v">{w.avg.p} g</div></div>
+      <div className="tile"><div className="l">{t('Days logged')}</div><div className="v">{w.logged} / 7</div></div>
+    </div> : <div className="muted" style={{ marginTop: 12 }}>{t('No activities yet.')}</div>}
+    <div style={{ height: 8 }} /><Button variant="ghost" className="dim" onClick={close}>{t('Close')}</Button>
+  </>
+}
+
+function NewSupp({ list, close }) {
+  const [name, setName] = useState('')
+  const add = () => { const n = name.trim().slice(0, 40); if (n) saveSupp([...list, { id: uid(), name: n }]); close() }
+  return <>
+    <h3>{t('Add supplement')}</h3>
+    <TextField value={name} onChange={e => setName(e.target.value)} placeholder={t('Name')} autoFocus />
+    <div style={{ height: 8 }} /><Button variant="primary" onClick={add}>{t('Add')}</Button>
+  </>
+}
+
 /* ------------------------------------ screen ------------------------------------ */
 
 export default function Nutrition() {
@@ -217,7 +251,9 @@ export default function Nutrition() {
   useLang()
   const S = useStore(s => s.S)
   const user = useStore(s => s.user)
-  const { goal, days, foods: mine } = useNutrition()
+  const { goal, days, foods: mine, plan, supp } = useNutrition()
+  const suppList = supp || []
+  const wd = weekdayOf(date)
   const sessions = useCardioSessions()
   const [date, setDate] = useState(todayISO())
   useEffect(() => { bind(user?.id || 'guest'); bindCardio(user?.id || 'guest'); flush() }, [user?.id])
@@ -263,5 +299,21 @@ export default function Nutrition() {
         <Pic food={e.food ? (mine[e.food] || { id: e.food }) : null} size={36} /><span className="lrow-m"><span className="lrow-t">{e.name}</span><span className="lrow-s">{e.grams ? e.grams + ' g' : ''}</span></span><span>{e.m.k} kcal</span></button>)}
       <div className="lrow" style={{ justifyContent: 'center' }}><Button size="sm" variant="tinted" icon="plus" onClick={() => addSheet(meal, date)}>{t('Add food')}</Button></div>
     </Section>)}
+    <Section title={t('Supplements')}>
+      {suppList.map(x => <div key={x.id} className="lrow">
+        <button className="lrow-m" style={{ textAlign: 'start', background: 'none', border: 0, color: 'inherit' }} onClick={() => editDay(date, d => ({ ...d, supp: toggleSupp(d.supp, x.id) }))}>
+          <span className="lrow-t">{(day.supp || []).includes(x.id) ? <Icon name="checkCircle" /> : <span style={{ display: 'inline-block', width: '1.2em' }} />} {x.name}</span></button>
+        <button className="iconbtn" aria-label={t('Delete')} onClick={() => saveSupp(suppList.filter(y => y.id !== x.id))}><Icon name="trash" /></button>
+      </div>)}
+      <div className="lrow" style={{ justifyContent: 'center' }}><Button size="sm" variant="tinted" icon="plus" onClick={() => useUI.getState().openSheet(close => <NewSupp list={suppList} close={close} />)}>{t('Add supplement')}</Button></div>
+    </Section>
+    <Section title={t('Meal plan')} footer={t('Saves what you ate on this weekday and fills it in on the next ones.')}>
+      <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
+        <Button size="sm" variant="tinted" disabled={!day.entries.length} onClick={() => { savePlan(planWith(plan, wd, day.entries)); toast(t('Plan saved for {0}', t(DAYN[wd]))) }}>{t('Save as plan for {0}', t(DAYN[wd]))}</Button>
+        <Button size="sm" variant="tinted" disabled={!plan?.[wd]} onClick={() => { editDay(date, d => ({ ...d, entries: [...d.entries, ...planEntries(plan, wd, uid)] })); toast(t('Added')) }}>{t('Add the plan')}</Button>
+      </div>
+    </Section>
+    <div style={{ height: 8 }} />
+    <Button variant="tinted" icon="chart" onClick={() => useUI.getState().openSheet(close => <Week date={date} goal={goal} days={days} close={close} />)}>{t('Last 7 days')}</Button>
   </div>
 }

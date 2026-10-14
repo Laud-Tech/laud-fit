@@ -2382,4 +2382,13 @@ export default {
   '{0} of {1} earned': '{1} में से {0} प्राप्त',
   '{0} t lifted': '{0} टन उठाया',
   '{0}-day streak': '{0} दिन की लगातार श्रृंखला',
+  'Add supplement': 'सप्लीमेंट जोड़ें',
+  'Add the plan': 'योजना जोड़ें',
+  'Average per day': 'प्रति दिन औसत',
+  'Days logged': 'दर्ज किए गए दिन',
+  'Meal plan': 'भोजन योजना',
+  'Plan saved for {0}': '{0} के लिए योजना सहेजी गई',
+  'Save as plan for {0}': '{0} की योजना के रूप में सहेजें',
+  'Saves what you ate on this weekday and fills it in on the next ones.': 'सप्ताह के इस दिन आपने जो खाया उसे सहेजता है और अगले दिनों में भर देता है।',
+  'Supplements': 'सप्लीमेंट',
 }

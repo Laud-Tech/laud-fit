@@ -7,7 +7,7 @@ const KEY = 'laudfit_nutrition_v1:'
 let owner = null
 let st = blank()
 const subs = new Set()
-function blank() { return { days: {}, foods: {}, goal: null, plan: null, dirty: {}, deleted: [], since: 0, seq: 0 } }
+function blank() { return { days: {}, foods: {}, goal: null, plan: null, supp: null, dirty: {}, deleted: [], since: 0, seq: 0 } }
 const read = k => { try { return JSON.parse(localStorage.getItem(k)) } catch { return null } }
 const commit = () => { if (owner) { try { localStorage.setItem(KEY + owner, JSON.stringify(st)) } catch { /* storage full: memory only */ } } subs.forEach(f => f()) }
 
@@ -20,13 +20,15 @@ export function bind(uid) {
 export const getNutrition = () => st
 export const subscribe = f => { subs.add(f); return () => subs.delete(f) }
 
-const slot = kind => (kind === 'day' ? 'days' : kind === 'food' ? 'foods' : kind)
-const EMPTY_DAY = { entries: [], water: 0 }
+const SLOT = { day: 'days', food: 'foods' }
+const SINGLE = new Set(['goal', 'plan', 'supp']) // one document each, id 'main'
+const slot = kind => SLOT[kind] || kind
+const EMPTY_DAY = { entries: [], water: 0, supp: [] }
 export const dayOf = date => st.days[date] || EMPTY_DAY
 
 function put(kind, id, data) {
   const s = slot(kind)
-  st = { ...st, [s]: s === 'goal' || s === 'plan' ? data : { ...st[s], [id]: data }, seq: st.seq + 1, dirty: { ...st.dirty, [kind + ':' + id]: st.seq + 1 }, deleted: st.deleted.filter(d => !(d.kind === kind && d.id === id)) }
+  st = { ...st, [s]: SINGLE.has(s) ? data : { ...st[s], [id]: data }, seq: st.seq + 1, dirty: { ...st.dirty, [kind + ':' + id]: st.seq + 1 }, deleted: st.deleted.filter(d => !(d.kind === kind && d.id === id)) }
   commit(); flush()
 }
 function del(kind, id) {
@@ -38,12 +40,15 @@ function del(kind, id) {
 
 /** Replaces day `date` with fn(day). An emptied day is deleted rather than kept as a blank document. */
 export function editDay(date, fn) {
-  const next = fn({ entries: [...dayOf(date).entries], water: dayOf(date).water })
-  if (!next.entries.length && !next.water) { if (st.days[date]) del('day', date) } else put('day', date, next)
+  const cur = dayOf(date)
+  const next = fn({ entries: [...cur.entries], water: cur.water, supp: [...(cur.supp || [])] })
+  if (!next.entries.length && !next.water && !next.supp?.length) { if (st.days[date]) del('day', date) } else put('day', date, next)
 }
 export const saveFood = food => put('food', food.id, food)
 export const removeFood = id => del('food', id)
 export const saveGoal = goal => put('goal', 'main', goal)
+export const savePlan = plan => put('plan', 'main', plan)
+export const saveSupp = list => put('supp', 'main', list)
 
 let flushing = null
 /** Pushes the outbox, then pulls what changed on the server. Never throws: offline is normal. */
@@ -53,7 +58,7 @@ export function flush() {
     try {
       const keys = Object.keys(st.dirty), sent = { ...st.dirty }, sentDel = [...st.deleted]
       if (keys.length || st.deleted.length) {
-        const putDocs = keys.map(k => { const [kind, ...r] = k.split(':'), id = r.join(':'), s = slot(kind); return { kind, id, data: s === 'goal' || s === 'plan' ? st[s] : st[s][id] } }).filter(d => d.data)
+        const putDocs = keys.map(k => { const [kind, ...r] = k.split(':'), id = r.join(':'), s = slot(kind); return { kind, id, data: SINGLE.has(s) ? st[s] : st[s][id] } }).filter(d => d.data)
         for (let i = 0; i < Math.max(putDocs.length, st.deleted.length); i += 100) {
           const b = { put: putDocs.slice(i, i + 100), del: st.deleted.slice(i, i + 100) }
           await api('/api/nutrition', { method: 'POST', body: JSON.stringify(b) })
@@ -62,17 +67,15 @@ export function flush() {
         st = { ...st, dirty: Object.fromEntries(Object.entries(st.dirty).filter(([k, v]) => sent[k] !== v)), deleted: st.deleted.filter(d => !sentDel.includes(d)) }; commit()
       }
       const r = await api('/api/nutrition?since=' + st.since)
-      const days = { ...st.days }, foods = { ...st.foods }
-      let { goal, plan } = st
+      const next = { days: { ...st.days }, foods: { ...st.foods } }
       for (const d of r.docs) {
         if (st.dirty[d.kind + ':' + d.id]) continue
-        if (d.kind === 'day') days[d.id] = d.data
-        else if (d.kind === 'food') foods[d.id] = d.data
-        else if (d.kind === 'goal') goal = d.data
-        else if (d.kind === 'plan') plan = d.data
+        const s = slot(d.kind)
+        if (SINGLE.has(s)) next[s] = d.data
+        else if (next[s]) next[s][d.id] = d.data
       }
       // A pull never deletes: removals reach the server first, and `since` only returns what exists.
-      st = { ...st, days, foods, goal, plan, since: r.now }
+      st = { ...st, ...next, since: r.now }
       commit()
       if (Object.keys(st.dirty).length || st.deleted.length) { flushing = null; return flush() }
       return true

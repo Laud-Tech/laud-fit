@@ -149,6 +149,18 @@ export function fmtDuration(sec) {
 /** Metres as "5.20 km" (or "850 m" under a kilometre). */
 export const fmtDistance = m => (!Number.isFinite(m) ? '–' : m < 1000 ? `${Math.round(m)} m` : `${(m / 1000).toFixed(2)} km`)
 
+// ---- miles --------------------------------------------------------------------------------
+// Everything is stored in metres and seconds; `imp` (the profile reads mph) only changes display.
+export const M_PER_MI = 1609.344
+/** "3.11 mi" (or "850 yd" under a tenth of a mile is overkill: feet are not tracked, so under 0.1 mi shows 0.xx mi). */
+export const fmtDist = (m, imp) => (!imp ? fmtDistance(m) : !Number.isFinite(m) ? '–' : `${(m / M_PER_MI).toFixed(2)} mi`)
+/** Pace "m:ss /km" or "m:ss /mi". */
+export const fmtPaceU = (secPerKm, imp) => `${fmtPace(imp ? secPerKm * M_PER_MI / 1000 : secPerKm)} ${imp ? '/mi' : '/km'}`
+export const fmtSpeedU = (kmh, imp) => `${(imp ? kmh * 1000 / M_PER_MI : kmh).toFixed(1)} ${imp ? 'mph' : 'km/h'}`
+export const splitSize = imp => (imp ? M_PER_MI : 1000)
+/** What a person types in the distance / speed fields, back to km and km/h. */
+export const toKm = (v, imp) => (imp ? v * M_PER_MI / 1000 : v)
+
 // ---- export ---------------------------------------------------------------------------------
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;' }[c]))
 /** GPX 1.1 for one outdoor session; null when there is no route to write. */

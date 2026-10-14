@@ -2393,4 +2393,13 @@ export default {
   '{0} of {1} earned': 'ได้รับ {0} จาก {1}',
   '{0} t lifted': 'ยกรวม {0} ตัน',
   '{0}-day streak': 'สตรีค {0} วัน',
+  'Add supplement': 'เพิ่มอาหารเสริม',
+  'Add the plan': 'เพิ่มแผน',
+  'Average per day': 'เฉลี่ยต่อวัน',
+  'Days logged': 'วันที่บันทึก',
+  'Meal plan': 'แผนมื้ออาหาร',
+  'Plan saved for {0}': 'บันทึกแผนสำหรับ {0} แล้ว',
+  'Save as plan for {0}': 'บันทึกเป็นแผนของ {0}',
+  'Saves what you ate on this weekday and fills it in on the next ones.': 'บันทึกสิ่งที่คุณกินในวันนี้ของสัปดาห์ และเติมให้ในวันถัดไป',
+  'Supplements': 'อาหารเสริม',
 }

@@ -86,3 +86,13 @@ test('deleting a profile removes its documents', async t => {
   await req('POST', '/api/nutrition', { uid: 'u2', body: { put: [day()] } });
   assert.equal((await req('POST', '/api/admin/user/delete', { body: { id: 'u2' } })).status, 200);
 });
+
+test('supplement kind is accepted by the store', async () => {
+  const { openDocs } = await import('../docs.js');
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'gym-kinds-'));
+  const d = openDocs(dir);
+  d.apply('u1', { put: [{ kind: 'supp', id: 'main', data: { x: 1 } }] });
+  assert.equal(d.since('u1', 0).length, 1);
+  assert.throws(() => d.apply('u1', { put: [{ kind: 'nope', id: 'a', data: {} }] }), /bad kind/);
+  d.close();
+});
