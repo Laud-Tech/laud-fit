@@ -1,0 +1,116 @@
+version: "3.7"
+
+# Laud Fit — production stack for Portainer, at https://gym.laud.tec.br
+#
+# REPLACES the openGym stack: edit the existing stack in Portainer (Stacks -> opengym -> Editor),
+# paste this over it and "Update the stack" with "Re-pull image" on. Same hostname, same Traefik
+# network and the same data folder, so profiles, passkeys and workouts carry over. Back the data up
+# first:  cp -a /data/opengym /data/opengym-backup-$(date +%F)
+#
+# The new images are private on GHCR: in Portainer add a registry first (Registries -> Add registry
+# -> Custom registry, URL ghcr.io, username = your GitHub user, password = a personal access token
+# with read:packages). The old media volumes are gone on purpose: the pictures ship in the image.
+# A new file laudfit.db appears in the data folder (cardio, nutrition); keep it in your backups.
+# To update later: re-deploy with "Re-pull image". :latest follows the vX.Y.Z tags of the repo.
+
+services:
+
+  opengym-api:
+    image: ghcr.io/laud-tech/laud-fit/api:latest
+
+    environment:
+      - PORT=3000
+      - DATA_DIR=/data
+
+      # Passkeys / WebAuthn. Keep the hostname: passkeys already registered stay valid.
+      - RP_ID=gym.laud.tec.br
+      - ORIGIN=https://gym.laud.tec.br
+      - RP_NAME=Laud Fit
+
+      - SESSION_DAYS=90
+
+      # 0 = anyone can create a profile, 1 = invite code required
+      - INVITE_ONLY=1
+      - ALLOW_GUEST=0
+
+      # Admin dashboard
+      - ADMIN_UIDS=5HqJoBZAMIaWU5l1
+
+      # The API is only reachable through the web container, which overwrites X-Forwarded-For.
+      - TRUST_PROXY=1
+
+      - DEFAULT_LANG=pt-BR
+
+      - AUDIT_LOG=1
+      - AUDIT_MAX=5000
+      - AUDIT_DAYS=90
+      - AUDIT_IP=off
+
+      - TZ=America/Cuiaba
+
+    volumes:
+      - /data/opengym/data:/data
+
+    networks:
+      - laud_network
+
+    deploy:
+      mode: replicated
+      replicas: 1
+
+      placement:
+        constraints:
+          - node.role == manager
+
+      resources:
+        limits:
+          cpus: "1"
+          memory: 512M
+
+    restart: unless-stopped
+
+
+  opengym-web:
+    image: ghcr.io/laud-tech/laud-fit/web:latest
+
+    environment:
+      - BACKEND=opengym-api
+      - PORT=3000
+      - NGINX_PORT=80
+
+    networks:
+      - laud_network
+
+    deploy:
+      mode: replicated
+      replicas: 1
+
+      placement:
+        constraints:
+          - node.role == manager
+
+      resources:
+        limits:
+          cpus: "1"
+          memory: 256M
+
+      labels:
+
+        - traefik.enable=true
+
+        - traefik.http.routers.opengym.rule=Host(`gym.laud.tec.br`)
+        - traefik.http.routers.opengym.entrypoints=websecure
+        - traefik.http.routers.opengym.tls=true
+        - traefik.http.routers.opengym.tls.certresolver=letsencryptresolver
+
+        - traefik.http.routers.opengym.service=opengym
+        - traefik.http.services.opengym.loadbalancer.server.port=80
+        - traefik.http.services.opengym.loadbalancer.passHostHeader=true
+
+    restart: unless-stopped
+
+
+networks:
+  laud_network:
+    external: true
+    name: laud_network
