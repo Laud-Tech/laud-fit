@@ -35,6 +35,7 @@ import { effectiveRoutineId } from './queue.js';
 import { stampPut } from './sync-stamps.js';
 import { atomicWrite as durableWrite } from './durable.js';
 import { openCardio, CardioError } from './cardio.js';
+import { openDocs, DocsError } from './docs.js';
 import { excusedOn, nudgeFor, nudgeWindowOpen, toneOf } from './nudge.js';
 
 const PORT = +(process.env.PORT || 3000);
@@ -1762,7 +1763,9 @@ const MEDIA_LIMITS = mediaLimits(process.env);
 const CARDIO = openCardio(DATA);
 // A phone on a long ride pushes the whole route at once; a budget per profile stops a loop, not a person.
 const CARDIO_WRITES = createWindow({ max: 120, windowMs: 3600000 });
-const cardioCall = fn => { try { return fn(); } catch (e) { throw e instanceof CardioError ? new HttpError(400, e.message) : e; } };
+const DOCS = openDocs(DATA);
+const DOCS_WRITES = createWindow({ max: 600, windowMs: 3600000 });
+const cardioCall = fn => { try { return fn(); } catch (e) { throw e instanceof CardioError || e instanceof DocsError ? new HttpError(400, e.message) : e; } };
 const MEDIA_ON = MEDIA_LIMITS.enabled;
 const MEDIA = createMediaStore({ dir: path.join(DATA, 'uploads'), limits: MEDIA_LIMITS, readState });
 // Leftovers of uploads the previous process was receiving when it stopped.
@@ -2510,6 +2513,23 @@ const routes = {
     json(res, 200, { ok: true });
   },
 
+  // ---- Laud Fit: nutrition documents (docs.js) ----
+  'GET /api/nutrition': async (req, res) => {
+    const user = readSession(req);
+    if (!user) return json(res, 401, { error: 'not signed in' });
+    const since = new URL(req.url, 'http://x').searchParams.get('since');
+    json(res, 200, { docs: DOCS.since(user.id, since), now: Date.now() });
+  },
+  'POST /api/nutrition': async (req, res) => {
+    const user = readSession(req);
+    if (!user) return json(res, 401, { error: 'not signed in' });
+    const wait = DOCS_WRITES.take(user.id);
+    if (wait) return tooMany(res, wait);
+    const body = await readBody(req);
+    const now = cardioCall(() => DOCS.apply(user.id, body));
+    json(res, 200, { ok: true, now });
+  },
+
   'POST /api/admin/user/delete': async (req, res) => {
     const admin = requireAdmin(req, res); if (!admin) return;
     const body = await readBody(req);
@@ -2527,6 +2547,7 @@ const routes = {
     try { fs.unlinkSync(stateFile(u.id)); } catch { /* already gone */ }
     try { coachConfig.clearProfileAuth(u.id); } catch { /* nothing stored */ }
     // Their photos and videos — the one place a profile's folder under uploads/ is removed.
+    try { DOCS.removeUser(u.id); } catch (e) { console.error('docs: could not remove documents of', u.id, e.message); }
     try { CARDIO.removeUser(u.id); } catch (e) { console.error('cardio: could not remove sessions of', u.id, e.message); }
     try { MEDIA.removeUser(u.id); } catch (e) { console.error('media: could not remove uploads of', u.id, e.message); }
     saveDb();

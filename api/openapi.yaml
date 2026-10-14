@@ -143,6 +143,8 @@ tags:
     description: Per-user state sync (the whole app state as one JSON blob)
   - name: cardio
     description: Laud Fit standalone cardio sessions (run, ride, swim, treadmill...) with optional GPS route; stored in SQLite
+  - name: nutrition
+    description: Laud Fit nutrition documents (food diary days, custom foods, goals); stored in SQLite
   - name: push
     description: Web Push (VAPID) subscriptions, rest-timer and test pushes
   - name: activity
@@ -1513,6 +1515,82 @@ paths:
         '401': { $ref: '#/components/responses/Unauthorized' }
         '404':
           description: No such session.
+  /api/nutrition:
+    get:
+      tags: [nutrition]
+      operationId: getNutritionDocs
+      summary: Documents changed since a time
+      description: >-
+        Every document of the caller (`kind` is `day`, `food`, `goal` or `plan`) whose server
+        `updated` is later than `since` (Unix ms; 0 or absent for all), and `now`, the server time to
+        pass as `since` next time.
+      parameters:
+        - { name: since, in: query, required: false, schema: { type: integer } }
+      responses:
+        '200':
+          description: The documents.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  docs:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        kind: { type: string, enum: [day, food, goal, plan] }
+                        id: { type: string }
+                        data: { type: object }
+                        updated: { type: integer }
+                  now: { type: integer }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    post:
+      tags: [nutrition]
+      operationId: applyNutritionDocs
+      summary: Create, replace and delete documents in one batch
+      description: >-
+        All or nothing, at most 200 entries. A `put` replaces the whole document (last write wins);
+        each document is at most 64 KiB of JSON, ids are `[A-Za-z0-9_:.-]` up to 64 characters (a
+        `day` uses its date).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                put:
+                  type: array
+                  items:
+                    type: object
+                    required: [kind, id, data]
+                    properties:
+                      kind: { type: string, enum: [day, food, goal, plan] }
+                      id: { type: string }
+                      data: { type: object }
+                del:
+                  type: array
+                  items:
+                    type: object
+                    required: [kind, id]
+                    properties:
+                      kind: { type: string, enum: [day, food, goal, plan] }
+                      id: { type: string }
+      responses:
+        '200':
+          description: Applied.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+                  now: { type: integer }
+        '400':
+          description: Bad kind, id, size or batch.
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
   /api/data:
     get:
       tags: [data]

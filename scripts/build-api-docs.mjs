@@ -129,6 +129,7 @@ const TAGS = {
   passkeys: { title: 'Passkeys', side: 'More passkeys &amp; device links' },
   data: { title: 'Data', side: 'State sync' },
   cardio: { title: 'Cardio', side: 'Laud Fit cardio sessions' },
+  nutrition: { title: 'Nutrition', side: 'Laud Fit food diary' },
   push: { title: 'Push', side: 'Notifications &amp; rest timer' },
   activity: { title: 'Activity', side: 'Live presence' },
   media: { title: 'Media', side: 'Photos &amp; videos of your exercises &amp; workouts' },
