@@ -253,9 +253,9 @@ export default function Nutrition() {
   const user = useStore(s => s.user)
   const { goal, days, foods: mine, plan, supp } = useNutrition()
   const suppList = supp || []
-  const wd = weekdayOf(date)
   const sessions = useCardioSessions()
   const [date, setDate] = useState(todayISO())
+  const wd = weekdayOf(date)
   useEffect(() => { bind(user?.id || 'guest'); bindCardio(user?.id || 'guest'); flush() }, [user?.id])
   const day = days[date] || dayOf(date)
   const { total, byMeal } = useMemo(() => dayTotals(day.entries), [day])
