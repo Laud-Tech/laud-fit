@@ -77,11 +77,23 @@ export function installViewportGuard(win = window) {
   let wasOpen = keyboardOpen(win)
   const timers = new Set()
   const later = (fn, ms) => { const t = win.setTimeout(() => { timers.delete(t); fn() }, ms); timers.add(t) }
+  let refocused = false   // a field took focus since the keyboard last closed
+  // The keyboard went away (Done, swipe, a tap outside) but the field kept focus: realign() stands
+  // down for a focused field, focusout never fires, and the page stays displaced, timer mid-screen.
+  // Once the dismiss animation is over and nobody has tapped a field since, let go of it.
+  const settleClosed = () => {
+    realign(win)
+    later(() => {
+      const a = win.document.activeElement
+      if (!refocused && !keyboardOpen(win) && isText(a) && viewportDisplacement(win) > 1) a.blur?.()
+      realign(win)
+    }, SETTLE_MS)
+  }
   const settle = () => { realign(win); later(() => realign(win), SETTLE_MS) }
 
   const onResize = () => {
     const open = keyboardOpen(win)
-    if (wasOpen && !open) settle()
+    if (wasOpen && !open) { refocused = false; settleClosed() }
     wasOpen = open
   }
   const onScroll = () => { if (!wasOpen) realign(win) }
@@ -89,11 +101,14 @@ export function installViewportGuard(win = window) {
 
   vv.addEventListener('resize', onResize)
   vv.addEventListener('scroll', onScroll)
+  const onFocusIn = e => { if (isText(e.target)) refocused = true }
   win.document.addEventListener('focusout', onFocusOut)
+  win.document.addEventListener('focusin', onFocusIn)
   return () => {
     vv.removeEventListener('resize', onResize)
     vv.removeEventListener('scroll', onScroll)
     win.document.removeEventListener('focusout', onFocusOut)
+    win.document.removeEventListener('focusin', onFocusIn)
     timers.forEach(t => win.clearTimeout(t))
   }
 }

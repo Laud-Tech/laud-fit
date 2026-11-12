@@ -103,6 +103,22 @@ describe('viewport guard', () => {
     vi.useRealTimers()
   })
 
+  it('lets go of a field that kept focus after the keyboard closed, unless it was tapped again', () => {
+    vi.useFakeTimers()
+    for (const retap of [false, true]) {
+      const input = { tagName: 'INPUT', blur: vi.fn() }
+      const w = fakeWindow({ vvHeight: 480, active: input })
+      const off = installViewportGuard(w)
+      w.visualViewport.height = 800; w.visualViewport.offsetTop = 190
+      w.fire(w.visualViewport, 'resize')
+      if (retap) w.fire(w.document, 'focusin', { target: input })
+      vi.advanceTimersByTime(400)
+      expect(input.blur).toHaveBeenCalledTimes(retap ? 0 : 1)
+      off()
+    }
+    vi.useRealTimers()
+  })
+
   it('does nothing while the keyboard is open, and nothing at all without a visualViewport', () => {
     const w = fakeWindow({ vvHeight: 480, offsetTop: 190 })
     installViewportGuard(w)
